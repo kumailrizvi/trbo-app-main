@@ -1823,7 +1823,21 @@ td { padding: 0.85rem 1rem; font-size: 0.875rem; }
   </div>
 </div>
 
-<script>
+<script>// ═══════════════════════════════════════
+// SUPABASE REAL DATA LAYER
+// ═══════════════════════════════════════
+const SUPABASE_URL = 'https://hxylhisadsavizmsiazj.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh4eWxoaXNhZHNhdml6bXNpYXpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMjg0NzAsImV4cCI6MjA5MDgwNDQ3MH0.87X_uQJEBKQYEGodsKHFj6sBBn2BWs9HCDEszPl1zcw';
+const DEMO_LENDER_IDS = {
+  'lender_koho': '11111111-1111-1111-1111-111111111111',
+  'lender_borrowell': '22222222-2222-2222-2222-222222222222',
+  'lender_rbc': '33333333-3333-3333-3333-333333333333',
+};
+// Supabase client (window.supabase from CDN)
+const supabase = (window.supabase && window.supabase.createClient)
+  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+
 // Session state
 let currentSession = { role: 'lender', lenderId: 'lender_koho' }; // 'lender' or 'trbo_admin'
 
@@ -3238,13 +3252,8 @@ async function handleDocUpload(input, docType) {
     });
 
     if (!resp.ok) throw new Error('API ' + resp.status);
-    const _pd = await resp.json();
-    const txt = JSON.stringify(_pd);
-
-    if (!resp.ok) throw new Error('API ' + resp.status);
-    const _r = await resp.json();
-    const txt = JSON.stringify(_r);
-    const parsed = JSON.parse(txt);
+    const parsed = await resp.json();
+    const txt = JSON.stringify(parsed);
     parsedDocData[docType] = parsed;
 
     if (statusEl) statusEl.style.display = 'none';
@@ -4724,7 +4733,7 @@ async function saveBorrowerToDB(scoreResult, formData) {
       destination_country: formData.destination || '',
       status: 'Ready',
       global_score: scoreResult.global_score || scoreResult.score || 0,
-      risk: scoreResult.risk_tier === 'Prime' || scoreResult.risk_tier === 'Near-Prime' ? 'Low' : scoreResult.risk_tier === 'Subprime' ? 'Medium' : 'High',
+      risk: (scoreResult.risk_category === 'LOW' || scoreResult.risk_tier === 'Prime' || scoreResult.risk_tier === 'Near-Prime') ? 'Low' : (scoreResult.risk_category === 'HIGH' || scoreResult.risk_tier === 'High-Risk') ? 'High' : 'Medium',
       risk_tier: scoreResult.risk_tier || '',
       income_usd: parseFloat(formData.income) || null,
       savings_usd: parseFloat(formData.savings) || null,
@@ -4732,10 +4741,10 @@ async function saveBorrowerToDB(scoreResult, formData) {
       employer: formData.employer || null,
       employment_type: formData.empType || null,
       tenure_months: parseInt(formData.tenure) || null,
-      suggested_limit: scoreResult.suggested_limit || null,
+      suggested_limit: scoreResult.suggested_limit || scoreResult.suggested_credit_limit || null,
       suggested_apr_low: scoreResult.suggested_apr_low || null,
       suggested_apr_high: scoreResult.suggested_apr_high || null,
-      analyst_narrative: scoreResult.analyst_narrative || null,
+      analyst_narrative: scoreResult.analyst_narrative || scoreResult.narrative || null,
       key_strengths: scoreResult.key_strengths || [],
       key_risks: scoreResult.key_risks || [],
       confidence: scoreResult.confidence || null,
@@ -5600,6 +5609,24 @@ async function saveBorrowerToDB(scoreResult, formData) {
 </div>
 
 <script>
+// ═══════════════════════════════════════
+// SUPABASE REAL DATA LAYER
+// ═══════════════════════════════════════
+const SUPABASE_URL = 'https://hxylhisadsavizmsiazj.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh4eWxoaXNhZHNhdml6bXNpYXpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMjg0NzAsImV4cCI6MjA5MDgwNDQ3MH0.87X_uQJEBKQYEGodsKHFj6sBBn2BWs9HCDEszPl1zcw';
+
+const DEMO_LENDER_IDS = {
+  'lender_koho': '11111111-1111-1111-1111-111111111111',
+  'lender_borrowell': '22222222-2222-2222-2222-222222222222',
+  'lender_rbc': '33333333-3333-3333-3333-333333333333',
+};
+
+// Initialize Supabase client
+const supabase = (window.supabase && window.supabase.createClient)
+  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+  : null;
+
+
 // Step 2: After all JS loaded, show portal selector
 (function(){
   var demoId = localStorage.getItem('trbo_demo_lender');
@@ -5621,4 +5648,393 @@ async function saveBorrowerToDB(scoreResult, formData) {
   }
 })();
 </script>
+<script>
+// ═══════════════════════════════════════
+// REAL DATA OVERRIDES
+// All functions below replace dummy-data versions with live Supabase reads/writes
+// ═══════════════════════════════════════
+
+// ── Helper: get DB lender ID
+function getDbLenderId() {
+  if (!currentLender) return null;
+  return DEMO_LENDER_IDS[currentLender.id] || currentLender.id;
+}
+
+// ── Helper: map DB row to display row
+function dbRowToDisplay(row) {
+  return {
+    id: row.id,
+    name: row.name || 'Unknown',
+    from: row.origin_country || '—',
+    to: row.destination_country || '—',
+    score: row.global_score || '—',
+    risk: row.risk || '—',
+    status: row.status || 'Ready',
+    income: row.income_usd,
+    savings: row.savings_usd,
+    remittance: row.remittance_usd,
+    employer: row.employer,
+    narrative: row.analyst_narrative,
+    limit: row.suggested_limit,
+    apr_low: row.suggested_apr_low,
+    apr_high: row.suggested_apr_high,
+    created_at: row.created_at,
+    is_demo: row.is_demo,
+  };
+}
+
+// ── 1. Override renderDashboard to use Supabase
+const _origRenderDashboard = typeof renderDashboard === 'function' ? renderDashboard : null;
+renderDashboard = async function() {
+  if (!supabase || !currentLender) { if(_origRenderDashboard) _origRenderDashboard(); return; }
+  const lenderId = getDbLenderId();
+  if (!lenderId) { if(_origRenderDashboard) _origRenderDashboard(); return; }
+
+  try {
+    const { data: rows } = await supabase.from('borrowers').select('*')
+      .eq('lender_id', lenderId).order('created_at', { ascending: false });
+
+    if (!rows || rows.length === 0) { if(_origRenderDashboard) _origRenderDashboard(); return; }
+
+    // Update stat cards
+    const total = rows.length;
+    const approved = rows.filter(r => r.status === 'Ready' || r.status === 'approved').length;
+    const review = rows.filter(r => r.status === 'Under Review').length;
+    const declined = rows.filter(r => r.status === 'declined').length;
+    const statTotal = document.getElementById('stat-total');
+    const statApproved = document.getElementById('stat-approved');
+    const statReview = document.getElementById('stat-review');
+    const statDeclined = document.getElementById('stat-declined');
+    if(statTotal) statTotal.textContent = total.toLocaleString();
+    if(statApproved) statApproved.textContent = approved.toLocaleString();
+    if(statReview) statReview.textContent = review.toLocaleString();
+    if(statDeclined) statDeclined.textContent = declined.toLocaleString();
+
+    // Update table
+    const tbody = document.getElementById('dashboard-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = rows.slice(0,8).map(row => {
+      const riskColor = row.risk === 'Low' ? 'var(--emerald-600)' : row.risk === 'Medium' ? 'var(--amber-600)' : 'var(--red-600)';
+      const statusColor = (row.status === 'Ready' || row.status === 'approved') ? 'var(--emerald-600)' : row.status === 'Under Review' ? 'var(--amber-600)' : 'var(--blue-600)';
+      return `<tr>
+        <td style="padding:.85rem 1.25rem;">
+          <span style="font-weight:500;color:var(--slate-900);">${row.name}</span>
+          ${row.is_demo ? '<span style="font-size:.65rem;background:#f1f5f9;color:#94a3b8;padding:.1rem .4rem;border-radius:3px;margin-left:.4rem;">demo</span>' : ''}
+        </td>
+        <td style="padding:.85rem 1.25rem;color:var(--slate-500);">${row.origin_country || '—'} → ${row.destination_country || '—'}</td>
+        <td style="padding:.85rem 1.25rem;font-weight:700;color:var(--slate-900);">${row.global_score || '—'}</td>
+        <td style="padding:.85rem 1.25rem;"><span style="color:${riskColor};font-weight:500;">${row.risk || '—'}</span></td>
+        <td style="padding:.85rem 1.25rem;"><span style="color:${statusColor};font-weight:500;">${row.status || '—'}</span></td>
+        <td style="padding:.85rem 1.25rem;text-align:right;"><button onclick="viewBorrower('${row.id}')" class="action-link">View Profile →</button></td>
+      </tr>`;
+    }).join('');
+  } catch(e) {
+    console.error('renderDashboard DB error:', e);
+    if(_origRenderDashboard) _origRenderDashboard();
+  }
+};
+
+// ── 2. Override renderBorrowers to use Supabase
+const _origRenderBorrowers = typeof renderBorrowers === 'function' ? renderBorrowers : null;
+renderBorrowers = async function() {
+  if (!supabase || !currentLender) { if(_origRenderBorrowers) _origRenderBorrowers(); return; }
+  const lenderId = getDbLenderId();
+  if (!lenderId) { if(_origRenderBorrowers) _origRenderBorrowers(); return; }
+
+  try {
+    const { data: rows } = await supabase.from('borrowers').select('*')
+      .eq('lender_id', lenderId).order('created_at', { ascending: false });
+
+    if (!rows) { if(_origRenderBorrowers) _origRenderBorrowers(); return; }
+
+    const tbody = document.getElementById('borrowers-tbody');
+    if (!tbody) return;
+
+    if (rows.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" style="padding:3rem;text-align:center;color:#94a3b8;">No borrowers yet — share your affiliate link to get started</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = rows.map(row => {
+      const riskBg = row.risk === 'Low' ? '#dcfce7' : row.risk === 'Medium' ? '#fef9c3' : '#fee2e2';
+      const riskColor = row.risk === 'Low' ? '#15803d' : row.risk === 'Medium' ? '#a16207' : '#dc2626';
+      const statusBg = (row.status === 'Ready' || row.status === 'approved') ? '#dcfce7' : row.status === 'Under Review' ? '#fef9c3' : '#dbeafe';
+      const statusColor = (row.status === 'Ready' || row.status === 'approved') ? '#15803d' : row.status === 'Under Review' ? '#a16207' : '#1d4ed8';
+      const date = row.created_at ? new Date(row.created_at).toLocaleDateString('en-CA') : '—';
+      return `<tr style="border-bottom:1px solid var(--slate-100);">
+        <td style="padding:.85rem 1.25rem;">
+          <span style="font-weight:500;color:var(--slate-900);">${row.name}</span>
+          ${row.is_demo ? '<span style="font-size:.65rem;background:#f1f5f9;color:#94a3b8;padding:.1rem .4rem;border-radius:3px;margin-left:.4rem;">demo</span>' : '<span style="font-size:.65rem;background:#dcfce7;color:#15803d;padding:.1rem .4rem;border-radius:3px;margin-left:.4rem;">real</span>'}
+        </td>
+        <td style="padding:.85rem 1.25rem;color:var(--slate-500);">${row.origin_country || '—'} → ${row.destination_country || '—'}</td>
+        <td style="padding:.85rem 1.25rem;font-weight:700;color:var(--slate-900);">${row.global_score || '—'}</td>
+        <td style="padding:.85rem 1.25rem;"><span style="font-size:.75rem;padding:.2rem .6rem;border-radius:9999px;background:${riskBg};color:${riskColor};font-weight:500;">${row.risk || '—'}</span></td>
+        <td style="padding:.85rem 1.25rem;"><span style="font-size:.75rem;padding:.2rem .6rem;border-radius:9999px;background:${statusBg};color:${statusColor};font-weight:500;">${row.status}</span></td>
+        <td style="padding:.85rem 1.25rem;color:var(--slate-400);font-size:.82rem;">${date}</td>
+        <td style="padding:.85rem 1.25rem;text-align:right;"><button onclick="viewBorrower('${row.id}')" class="action-btn primary" style="padding:.35rem .85rem;font-size:.78rem;">View Profile</button></td>
+      </tr>`;
+    }).join('');
+  } catch(e) {
+    console.error('renderBorrowers DB error:', e);
+    if(_origRenderBorrowers) _origRenderBorrowers();
+  }
+};
+
+// ── 3. viewBorrower - fetch from Supabase and show profile
+async function viewBorrower(id) {
+  if (!supabase) return;
+  try {
+    const { data: row } = await supabase.from('borrowers').select('*').eq('id', id).single();
+    if (!row) return;
+    const scoreColor = row.global_score >= 750 ? '#059669' : row.global_score >= 650 ? '#2563eb' : '#d97706';
+    const profileHtml = `
+      <div style="padding:2rem;max-width:900px;margin:0 auto;">
+        <button onclick="showLenderPage('borrowers', document.querySelectorAll('.sidebar-item')[1])" style="background:none;border:none;color:#455c62;cursor:pointer;font-size:.875rem;margin-bottom:1.5rem;display:flex;align-items:center;gap:.4rem;font-family:inherit;">← Back to Borrowers</button>
+        <div style="display:grid;grid-template-columns:1fr 300px;gap:1.5rem;">
+          <div>
+            <div style="background:#fff;border:1px solid #e2e8f0;border-radius:.75rem;padding:1.5rem;margin-bottom:1.25rem;">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+                <div>
+                  <div style="font-size:1.4rem;font-weight:600;color:#0f172a;">${row.name}</div>
+                  <div style="font-size:.875rem;color:#64748b;">${row.origin_country || '—'} → ${row.destination_country || '—'} · ${row.email || 'No email'}</div>
+                </div>
+                <div style="text-align:center;">
+                  <div style="font-size:3rem;font-weight:800;color:${scoreColor};line-height:1;">${row.global_score || '—'}</div>
+                  <div style="font-size:.75rem;color:#64748b;">Global Score</div>
+                </div>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;">
+                <div style="background:#f8fafc;border-radius:.5rem;padding:.85rem;text-align:center;">
+                  <div style="font-size:1.25rem;font-weight:700;color:#0f172a;">$${row.income_usd ? row.income_usd.toLocaleString() : '—'}</div>
+                  <div style="font-size:.72rem;color:#64748b;">Monthly Income</div>
+                </div>
+                <div style="background:#f8fafc;border-radius:.5rem;padding:.85rem;text-align:center;">
+                  <div style="font-size:1.25rem;font-weight:700;color:#0f172a;">$${row.suggested_limit ? row.suggested_limit.toLocaleString() : '—'}</div>
+                  <div style="font-size:.72rem;color:#64748b;">Suggested Limit</div>
+                </div>
+                <div style="background:#f8fafc;border-radius:.5rem;padding:.85rem;text-align:center;">
+                  <div style="font-size:1.25rem;font-weight:700;color:#0f172a;">${row.suggested_apr_low || '—'}–${row.suggested_apr_high || '—'}%</div>
+                  <div style="font-size:.72rem;color:#64748b;">APR Range</div>
+                </div>
+              </div>
+            </div>
+            ${row.analyst_narrative ? `<div style="background:#fff;border:1px solid #e2e8f0;border-radius:.75rem;padding:1.5rem;margin-bottom:1.25rem;">
+              <div style="font-weight:600;color:#0f172a;margin-bottom:.75rem;">Analyst Narrative</div>
+              <p style="font-size:.875rem;color:#475569;line-height:1.7;font-style:italic;">"${row.analyst_narrative}"</p>
+            </div>` : ''}
+            ${row.key_strengths && row.key_strengths.length ? `<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:.75rem;padding:1.25rem;margin-bottom:1rem;">
+              <div style="font-weight:600;color:#15803d;margin-bottom:.75rem;font-size:.85rem;text-transform:uppercase;letter-spacing:.04em;">✓ Strengths</div>
+              ${row.key_strengths.map(s => `<div style="font-size:.875rem;color:#0f172a;margin-bottom:.4rem;">• ${s}</div>`).join('')}
+            </div>` : ''}
+            ${row.key_risks && row.key_risks.length ? `<div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:.75rem;padding:1.25rem;">
+              <div style="font-weight:600;color:#a16207;margin-bottom:.75rem;font-size:.85rem;text-transform:uppercase;letter-spacing:.04em;">⚠ Considerations</div>
+              ${row.key_risks.map(r => `<div style="font-size:.875rem;color:#0f172a;margin-bottom:.4rem;">• ${r}</div>`).join('')}
+            </div>` : ''}
+          </div>
+          <div>
+            <div style="background:#fff;border:1px solid #e2e8f0;border-radius:.75rem;padding:1.25rem;margin-bottom:1rem;">
+              <div style="font-weight:600;color:#0f172a;margin-bottom:1rem;font-size:.9rem;">Decision</div>
+              <div style="display:flex;flex-direction:column;gap:.6rem;">
+                <button onclick="updateBorrowerStatus('${row.id}','approved')" style="padding:.6rem;background:#dcfce7;color:#15803d;border:1px solid #bbf7d0;border-radius:.4rem;cursor:pointer;font-weight:600;font-size:.85rem;font-family:inherit;">✓ Approve</button>
+                <button onclick="updateBorrowerStatus('${row.id}','Under Review')" style="padding:.6rem;background:#fef9c3;color:#a16207;border:1px solid #fde68a;border-radius:.4rem;cursor:pointer;font-weight:600;font-size:.85rem;font-family:inherit;">⟳ Request Review</button>
+                <button onclick="updateBorrowerStatus('${row.id}','declined')" style="padding:.6rem;background:#fee2e2;color:#dc2626;border:1px solid #fecaca;border-radius:.4rem;cursor:pointer;font-weight:600;font-size:.85rem;font-family:inherit;">✗ Decline</button>
+              </div>
+            </div>
+            <div style="background:#fff;border:1px solid #e2e8f0;border-radius:.75rem;padding:1.25rem;">
+              <div style="font-weight:600;color:#0f172a;margin-bottom:1rem;font-size:.9rem;">Details</div>
+              ${[
+                ['Employer', row.employer],
+                ['Employment', row.employment_type],
+                ['Tenure', row.tenure_months ? row.tenure_months + ' months' : null],
+                ['Savings/mo', row.savings_usd ? '$' + row.savings_usd.toLocaleString() : null],
+                ['Remittance/mo', row.remittance_usd ? '$' + row.remittance_usd.toLocaleString() : null],
+                ['Risk Tier', row.risk_tier],
+                ['Submitted', row.created_at ? new Date(row.created_at).toLocaleDateString() : null],
+              ].filter(([,v]) => v).map(([l,v]) => `<div style="display:flex;justify-content:space-between;padding:.5rem 0;border-bottom:1px solid #f8fafc;font-size:.82rem;">
+                <span style="color:#64748b;">${l}</span><span style="color:#0f172a;font-weight:500;">${v}</span>
+              </div>`).join('')}
+            </div>
+          </div>
+        </div>
+      </div>`;
+
+    // Show profile in the lender main area
+    const main = document.querySelector('.lender-main') || document.getElementById('lender-main');
+    if (main) {
+      // Hide all pages
+      document.querySelectorAll('.lender-page').forEach(p => p.style.display = 'none');
+      // Create or reuse profile container
+      let profileDiv = document.getElementById('live-profile-view');
+      if (!profileDiv) {
+        profileDiv = document.createElement('div');
+        profileDiv.id = 'live-profile-view';
+        main.appendChild(profileDiv);
+      }
+      profileDiv.innerHTML = profileHtml;
+      profileDiv.style.display = 'block';
+    }
+  } catch(e) {
+    console.error('viewBorrower error:', e);
+    showToast('Could not load profile');
+  }
+}
+
+// ── 4. updateBorrowerStatus
+async function updateBorrowerStatus(id, status) {
+  if (!supabase) return;
+  const { error } = await supabase.from('borrowers').update({ status }).eq('id', id);
+  if (!error) {
+    showToast('Status updated to: ' + status);
+    renderBorrowers();
+    renderDashboard();
+    viewBorrower(id);
+  }
+}
+
+// ── 5. Wire saveBorrowerToDB into runCheck (lender side)
+const _origRunCheck = typeof runCheck === 'function' ? runCheck : null;
+if (_origRunCheck) {
+  runCheck = async function() {
+    await _origRunCheck();
+    // After results render, save to DB
+    setTimeout(async () => {
+      const resultsEl = document.getElementById('check-results');
+      if (!resultsEl || !resultsEl.classList.contains('active')) return;
+      // Get form values
+      const formData = {
+        name: (document.getElementById('rc-first')?.value || '') + ' ' + (document.getElementById('rc-last')?.value || ''),
+        origin: document.getElementById('rc-origin')?.value || '',
+        destination: document.getElementById('rc-dest')?.value || '',
+        income: document.getElementById('rc-income')?.value || '',
+        savings: document.getElementById('rc-savings')?.value || '',
+        remittance: document.getElementById('rc-remittance')?.value || '',
+        employer: document.getElementById('rc-employer')?.value || '',
+        empType: 'Full-time',
+        tenure: (parseFloat(document.getElementById('rc-tenure')?.value || '0') * 12).toString(),
+      };
+      // Get score from rendered results
+      const scoreEl = document.querySelector('.score-num');
+      if (scoreEl && supabase) {
+        const score = parseInt(scoreEl.textContent) || 0;
+        const riskEl = document.querySelector('.score-label');
+        await saveBorrowerToDB(
+          { global_score: score, risk_tier: riskEl?.textContent || '' },
+          formData
+        );
+        renderDashboard();
+        renderBorrowers();
+      }
+    }, 500);
+  };
+}
+
+// ── 6. Wire saveBorrowerToDB into borrower portal runBorrowerCheck
+const _origRunBorrowerCheck = typeof runBorrowerCheck === 'function' ? runBorrowerCheck : null;
+if (_origRunBorrowerCheck) {
+  runBorrowerCheck = async function() {
+    await _origRunBorrowerCheck();
+  };
+}
+
+// Patch callClaude to intercept borrower result and save it
+const _origCallClaude = typeof callClaude === 'function' ? callClaude : null;
+if (_origCallClaude) {
+  callClaude = async function(system, user) {
+    const result = await _origCallClaude(system, user);
+    // If this is a borrower scoring call, save the result
+    if (result && result.global_score && typeof showBorrowerStep === 'function') {
+      const fullname = document.getElementById('b-fullname')?.value || '';
+      const parts = fullname.trim().split(' ');
+      setTimeout(async () => {
+        try {
+          await saveBorrowerToDB(result, {
+            name: fullname || 'Unknown',
+            origin: document.getElementById('b-origin')?.value || '',
+            destination: document.getElementById('b-dest')?.value || '',
+            income: document.getElementById('b-income')?.value || '',
+            savings: document.getElementById('b-savings')?.value || '',
+            remittance: document.getElementById('b-remittance')?.value || '',
+          });
+          renderDashboard();
+          renderBorrowers();
+        } catch(e) { console.error('Auto-save failed:', e); }
+      }, 1000);
+    }
+    return result;
+  };
+}
+
+// ── 7. Portfolio Analytics - real data
+const _origRenderAnalytics = typeof renderAnalytics === 'function' ? renderAnalytics : null;
+async function refreshAnalytics() {
+  if (!supabase || !currentLender) return;
+  const lenderId = getDbLenderId();
+  if (!lenderId) return;
+  try {
+    const { data: rows } = await supabase.from('borrowers').select('*').eq('lender_id', lenderId);
+    if (!rows || rows.length === 0) return;
+
+    const total = rows.length;
+    const approved = rows.filter(r => r.status === 'Ready' || r.status === 'approved').length;
+    const avgScore = Math.round(rows.filter(r => r.global_score).reduce((a, r) => a + r.global_score, 0) / rows.filter(r => r.global_score).length) || 0;
+    const avgLimit = Math.round(rows.filter(r => r.suggested_limit).reduce((a, r) => a + r.suggested_limit, 0) / rows.filter(r => r.suggested_limit).length) || 0;
+
+    // Update KPI elements if they exist on the analytics page
+    const kpis = document.querySelectorAll('#page-analytics [data-kpi]');
+    kpis.forEach(el => {
+      const key = el.getAttribute('data-kpi');
+      if (key === 'approval_rate') el.textContent = total ? Math.round(approved/total*100) + '%' : '—';
+      if (key === 'avg_score') el.textContent = avgScore || '—';
+      if (key === 'avg_limit') el.textContent = avgLimit ? '$' + avgLimit.toLocaleString() : '—';
+      if (key === 'total') el.textContent = total;
+    });
+  } catch(e) { console.error('Analytics error:', e); }
+}
+
+// Call analytics refresh when analytics page is shown
+const _origShowLenderPage = typeof showLenderPage === 'function' ? showLenderPage : null;
+if (_origShowLenderPage) {
+  showLenderPage = function(page, btn) {
+    _origShowLenderPage(page, btn);
+    if (page === 'analytics') setTimeout(refreshAnalytics, 100);
+    if (page === 'dashboard') setTimeout(function(){ renderDashboard(); }, 100);
+    if (page === 'borrowers') setTimeout(function(){ renderBorrowers(); }, 100);
+  };
+}
+
+// ── 8. Settings - save to Supabase lenders table
+async function saveSettings() {
+  if (!supabase || !currentLender) { showToast('Settings saved locally'); return; }
+  const lenderId = getDbLenderId();
+  const webhookUrl = document.getElementById('wh-url')?.value || document.querySelector('#webhook-list input')?.value || null;
+  const { error } = await supabase.from('lenders').update({
+    webhook_url: webhookUrl,
+  }).eq('id', lenderId);
+  if (!error) showToast('✓ Settings saved');
+  else showToast('Save failed: ' + error.message);
+}
+
+// ── 9. Risk Thresholds - save to Supabase lenders table
+async function saveRiskThresholds() {
+  if (!supabase || !currentLender) { showToast('Thresholds saved locally'); return; }
+  const lenderId = getDbLenderId();
+  const minScoreEl = document.getElementById('rt-min-score') || document.querySelector('[data-risk="min_score"]');
+  const minScore = minScoreEl ? parseInt(minScoreEl.value) : currentLender.minScore;
+  const { error } = await supabase.from('lenders').update({
+    min_score: minScore,
+  }).eq('id', lenderId);
+  if (!error) { showToast('✓ Risk thresholds saved'); currentLender.minScore = minScore; }
+  else showToast('Save failed: ' + error.message);
+}
+
+// Expose globally
+window.viewBorrower = viewBorrower;
+window.updateBorrowerStatus = updateBorrowerStatus;
+window.saveSettings = saveSettings;
+window.saveRiskThresholds = saveRiskThresholds;
+window.refreshAnalytics = refreshAnalytics;
+
+console.log('trbo real data layer loaded. supabase:', !!supabase);
+</script>
+
 </body>
