@@ -4792,6 +4792,8 @@ async function saveBorrowerToDB(scoreResult, formData) {
         if (!lenderId) lenderId = refMap[urlRef] || null;
       }
     }
+    // Default to KOHO if no lender context (direct portal access)
+    if (!lenderId) lenderId = '11111111-1111-1111-1111-111111111111';
     console.log('saveBorrowerToDB: lenderId=', lenderId, 'score=', scoreResult.global_score);
     const { data, error } = await _sbNow.from('borrowers').insert({
       lender_id: lenderId,
