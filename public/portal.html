@@ -968,6 +968,11 @@ td { padding: 0.85rem 1rem; font-size: 0.875rem; }
         <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         Borrowers
       </button>
+      <button class="sidebar-item" onclick="showLenderPage('work-queues',this)" id="sidebar-work-queues-btn">
+        <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Work Queues
+        <span id="wq-badge" style="margin-left:auto;background:#dc2626;color:#fff;font-size:.6rem;font-weight:700;padding:.1rem .4rem;border-radius:9999px;min-width:16px;text-align:center;display:none;">0</span>
+      </button>
       <button class="sidebar-item" onclick="showLenderPage('run-check',this)">
         <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         Run Check
@@ -1113,7 +1118,67 @@ td { padding: 0.85rem 1rem; font-size: 0.875rem; }
       </div>
     </div>
 
-    <!-- Run Check -->
+    <!-- Run
+    <!-- ── WORK QUEUES PAGE ── -->
+    <div id="page-work-queues" class="lender-page">
+      <div class="page-title">Work Queues</div>
+      <div class="page-sub">Underwriting tasks requiring action today</div>
+
+      <!-- Queue cards view -->
+      <div id="wq-cards-view">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem;margin-bottom:1.5rem;" id="wq-cards-grid">
+          <!-- Populated by renderWorkQueues() -->
+          <div style="text-align:center;padding:3rem;color:#94a3b8;grid-column:span 3;">Loading queues...</div>
+        </div>
+      </div>
+
+      <!-- Queue detail view (hidden by default) -->
+      <div id="wq-detail-view" style="display:none;">
+        <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem;">
+          <button onclick="showWQCards()" style="display:flex;align-items:center;gap:.4rem;background:none;border:1px solid #e2e8f0;border-radius:.5rem;padding:.45rem .85rem;color:#64748b;font-size:.82rem;cursor:pointer;font-family:inherit;">← Work Queues</button>
+          <div>
+            <div id="wq-detail-title" class="page-title" style="margin:0;font-size:1.5rem;">Queue</div>
+            <div id="wq-detail-sub" style="font-size:.82rem;color:#64748b;"></div>
+          </div>
+        </div>
+
+        <!-- Tabs -->
+        <div style="display:flex;gap:0;border-bottom:2px solid #e2e8f0;margin-bottom:1.5rem;">
+          <button id="wq-tab-awaiting" onclick="switchWQTab('awaiting')" style="padding:.75rem 1.5rem;background:none;border:none;cursor:pointer;font-size:.875rem;font-weight:600;color:#455c62;border-bottom:2px solid #455c62;margin-bottom:-2px;font-family:inherit;">Awaiting Decision</button>
+          <button id="wq-tab-decided" onclick="switchWQTab('decided')" style="padding:.75rem 1.5rem;background:none;border:none;cursor:pointer;font-size:.875rem;color:#64748b;border-bottom:2px solid transparent;margin-bottom:-2px;font-family:inherit;">Decision Made</button>
+        </div>
+
+        <!-- Search -->
+        <div style="display:flex;gap:.75rem;margin-bottom:1.25rem;">
+          <div style="flex:1;position:relative;">
+            <svg style="position:absolute;left:.85rem;top:50%;transform:translateY(-50%);pointer-events:none;" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input id="wq-search" oninput="filterWQBorrowers(this.value)" placeholder="Search applicants..." style="width:100%;padding:.65rem .85rem .65rem 2.25rem;border:1px solid rgba(0,0,0,0.12);border-radius:.5rem;font-size:.875rem;outline:none;background:#f3f3f5;color:#0f172a;box-sizing:border-box;font-family:inherit;">
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div style="background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:.75rem;overflow:hidden;">
+          <table style="width:100%;border-collapse:collapse;">
+            <thead>
+              <tr style="background:#f8fafc;border-bottom:1px solid #e2e8f0;">
+                <th style="padding:.75rem 1.25rem;text-align:left;font-size:.75rem;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.04em;">Applicant</th>
+                <th style="padding:.75rem 1.25rem;text-align:left;font-size:.75rem;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.04em;">Corridor</th>
+                <th style="padding:.75rem 1.25rem;text-align:left;font-size:.75rem;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.04em;">Score</th>
+                <th style="padding:.75rem 1.25rem;text-align:left;font-size:.75rem;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.04em;">Risk</th>
+                <th style="padding:.75rem 1.25rem;text-align:left;font-size:.75rem;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.04em;">Applied On</th>
+                <th style="padding:.75rem 1.25rem;text-align:left;font-size:.75rem;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.04em;">Status</th>
+                <th style="padding:.75rem 1.25rem;text-align:right;font-size:.75rem;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.04em;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="wq-tbody">
+              <tr><td colspan="7" style="padding:3rem;text-align:center;color:#94a3b8;">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+ Check -->
     <div id="page-run-check" class="lender-page">
       <div class="page-title">Run Credit Check</div>
       <div class="page-sub">Initiate a new AI-powered cross-border credit analysis</div>
@@ -2361,11 +2426,15 @@ async function runBorrowerCheck() {
       try {
         await saveBorrowerToDB(r, {
           name: first + ' ' + last,
-          origin_country: origin,
-          destination_country: dest,
-          income_usd: parseFloat(income) || null,
-          savings_usd: parseFloat(savings) || null,
-          remittance_usd: parseFloat(remittance) || null,
+          origin: origin,
+          destination: dest,
+          income: income,
+          savings: savings,
+          remittance: remittance,
+          email: (document.getElementById('b-email') || {value:''}).value || null,
+          employer: (document.getElementById('b-employer') || {value:''}).value || null,
+          empType: (document.getElementById('b-emptype') || {value:''}).value || 'Full-time',
+          tenure: (document.getElementById('b-tenure') || {value:'0'}).value || '0',
         });
       } catch(dbErr) { console.error('DB save:', dbErr); }
     } catch(e) {
@@ -3170,57 +3239,161 @@ async function openProfileFromDB(borrowerId) {
     const { data: b, error } = await _sbNow.from('borrowers').select('*').eq('id', borrowerId).single();
     if (error || !b) { showToast('Could not load profile'); return; }
 
-    // Show the profile-view (original rich HTML)
+    // Hide all views and lender pages
     document.querySelectorAll('.view').forEach(v => { v.style.display = 'none'; v.classList.remove('active'); });
-    // Also hide lender pages
     document.querySelectorAll('.lender-page').forEach(p => p.style.display = 'none');
+
+    // Build score color
+    const sc = b.global_score || 0;
+    const scoreColor = sc >= 750 ? '#059669' : sc >= 650 ? '#2563eb' : '#d97706';
+    const riskBg = b.risk === 'Low' ? 'rgba(5,150,105,0.12)' : b.risk === 'High' ? 'rgba(220,38,38,0.12)' : 'rgba(217,119,6,0.12)';
+    const riskColor = b.risk === 'Low' ? '#059669' : b.risk === 'High' ? '#dc2626' : '#d97706';
+
+    // Use profile-view container but replace its content
     const pv = document.getElementById('profile-view');
-    if (pv) { pv.style.display = 'block'; }
+    if (!pv) return;
+    pv.style.display = 'block';
 
-    // Populate fields with real data
-    const set = (id, val) => { const el = document.getElementById(id); if (el && val) el.textContent = val; };
-    set('pv-name', b.name);
-    set('pv-breadcrumb', b.name);
-    set('pv-corridor', (b.origin_country || '') + ' → ' + (b.destination_country || ''));
-    set('pv-score', b.global_score || '—');
-    set('pv-risk', (b.risk || 'Low') + ' Risk');
-    set('pv-employer', b.employer || 'Not provided');
+    pv.innerHTML = `
+      <!-- Top bar -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:1rem 2rem;background:#fff;border-bottom:1px solid rgba(0,0,0,0.08);position:sticky;top:0;z-index:10;">
+        <div style="display:flex;align-items:center;gap:1rem;">
+          <button onclick="backToBorrowers()" style="display:flex;align-items:center;gap:0.4rem;background:none;border:1px solid #e2e8f0;border-radius:.5rem;padding:.45rem .85rem;color:#64748b;font-size:.82rem;cursor:pointer;font-family:inherit;">← Back</button>
+          <span style="font-size:.82rem;color:#64748b;">Borrowers / <span style="color:#0f172a;">${b.name}</span></span>
+        </div>
+        <div style="font-family:'Segoe UI',Georgia,serif;font-size:1.4rem;font-weight:400;color:#455c62;">trbo. <span style="font-size:.55rem;letter-spacing:.2em;vertical-align:middle;color:#9aadaf;">FINANCIAL</span></div>
+      </div>
 
-    // Score color
-    const scoreEl = document.getElementById('pv-score');
-    if (scoreEl) {
-      const sc = b.global_score || 0;
-      scoreEl.style.color = sc >= 750 ? '#059669' : sc >= 650 ? '#2563eb' : '#d97706';
-    }
+      <!-- Header -->
+      <div style="background:#fff;border-bottom:1px solid rgba(0,0,0,0.08);padding:2rem 2.5rem;">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;max-width:1200px;margin:0 auto;">
+          <div>
+            <div style="font-size:2rem;font-weight:600;color:#0f172a;margin-bottom:.5rem;">${b.name}</div>
+            <div style="font-size:1.05rem;color:#64748b;">${b.origin_country || '—'} → ${b.destination_country || '—'}</div>
+            ${b.email ? `<div style="font-size:.85rem;color:#94a3b8;margin-top:.3rem;">${b.email}</div>` : ''}
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:.78rem;color:#64748b;margin-bottom:.4rem;">Global Credit Score</div>
+            <div style="font-size:4rem;font-weight:700;color:${scoreColor};line-height:1;margin-bottom:.6rem;">${b.global_score || '—'}</div>
+            <div style="display:flex;gap:.5rem;justify-content:center;">
+              <span style="background:${riskBg};color:${riskColor};font-size:.8rem;padding:.35rem 1rem;border-radius:9999px;font-weight:500;">${b.risk || 'Medium'} Risk</span>
+              <span style="background:rgba(5,150,105,0.1);color:#059669;font-size:.8rem;padding:.35rem 1rem;border-radius:9999px;">${b.status || 'Ready'}</span>
+            </div>
+          </div>
+        </div>
+      </div>
 
-    // Key outputs
-    const setProf = (id, val) => { const el = document.getElementById(id); if (el && val) el.textContent = val; };
-    setProf('prof-credit', b.suggested_limit ? '$' + b.suggested_limit.toLocaleString() : '—');
-    setProf('prof-apr', b.suggested_apr_low && b.suggested_apr_high ? b.suggested_apr_low + '% – ' + b.suggested_apr_high + '%' : '—');
+      <!-- Body -->
+      <div style="max-width:1200px;margin:0 auto;padding:2rem 2.5rem;display:flex;gap:1.5rem;align-items:flex-start;">
 
-    // Income section
-    if (b.income_usd) {
-      const incomeEls = pv ? pv.querySelectorAll('[data-field="income"]') : [];
-      incomeEls.forEach(el => el.textContent = '$' + b.income_usd.toLocaleString() + '/mo');
-    }
+        <!-- Left -->
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1.25rem;">
 
-    // Analyst narrative
-    if (b.analyst_narrative) {
-      let narEl = document.getElementById('pv-narrative');
-      if (!narEl) {
-        narEl = document.createElement('div');
-        narEl.id = 'pv-narrative';
-        narEl.style.cssText = 'background:#f8fafc;border:1px solid #e2e8f0;border-radius:.75rem;padding:1.25rem;margin:1.25rem 2.5rem;font-size:.875rem;color:#475569;line-height:1.7;font-style:italic;';
-        const pvBody = pv ? pv.querySelector('[style*="max-width:1200px"]') : null;
-        if (pvBody) pvBody.insertBefore(narEl, pvBody.firstChild);
-      }
-      narEl.innerHTML = '<strong style="color:#0f172a;font-style:normal;">Analyst Summary:</strong> "' + b.analyst_narrative + '"';
-    }
+          ${b.analyst_narrative ? `
+          <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:.75rem;padding:1.25rem;">
+            <div style="font-size:.75rem;font-weight:600;color:#15803d;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.5rem;">✓ trbo Analyst Summary</div>
+            <div style="font-size:.875rem;color:#0f172a;line-height:1.7;font-style:italic;">"${b.analyst_narrative}"</div>
+          </div>` : ''}
+
+          <!-- Financial Summary -->
+          <div style="background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:.75rem;padding:1.5rem;">
+            <div style="font-size:1rem;font-weight:600;color:#0f172a;margin-bottom:1.25rem;">$ Income & Employment</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+              <div>
+                <div style="font-size:.78rem;color:#64748b;margin-bottom:.3rem;">Monthly Income</div>
+                <div style="font-size:1.5rem;font-weight:700;color:#0f172a;">${b.income_usd ? '$' + b.income_usd.toLocaleString() + '/mo' : '—'}</div>
+              </div>
+              <div>
+                <div style="font-size:.78rem;color:#64748b;margin-bottom:.3rem;">Monthly Savings</div>
+                <div style="font-size:1.5rem;font-weight:700;color:#0f172a;">${b.savings_usd ? '$' + b.savings_usd.toLocaleString() + '/mo' : '—'}</div>
+              </div>
+              <div>
+                <div style="font-size:.78rem;color:#64748b;margin-bottom:.3rem;">Employer</div>
+                <div style="font-size:1rem;font-weight:500;color:#0f172a;">${b.employer || 'Not provided'}</div>
+              </div>
+              <div>
+                <div style="font-size:.78rem;color:#64748b;margin-bottom:.3rem;">Employment Type</div>
+                <div style="font-size:1rem;font-weight:500;color:#0f172a;">${b.employment_type || '—'}</div>
+              </div>
+              ${b.tenure_months ? `<div>
+                <div style="font-size:.78rem;color:#64748b;margin-bottom:.3rem;">Tenure</div>
+                <div style="font-size:1rem;font-weight:500;color:#0f172a;">${b.tenure_months} months</div>
+              </div>` : ''}
+              ${b.remittance_usd ? `<div>
+                <div style="font-size:.78rem;color:#64748b;margin-bottom:.3rem;">Monthly Remittances</div>
+                <div style="font-size:1.5rem;font-weight:700;color:#2563eb;">$${b.remittance_usd.toLocaleString()}/mo</div>
+              </div>` : ''}
+            </div>
+          </div>
+
+          ${(b.key_strengths && b.key_strengths.length) || (b.key_risks && b.key_risks.length) ? `
+          <div style="background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:.75rem;padding:1.5rem;">
+            <div style="font-size:1rem;font-weight:600;color:#0f172a;margin-bottom:1.25rem;">Credit Factors</div>
+            ${b.key_strengths && b.key_strengths.length ? `
+            <div style="margin-bottom:1rem;">
+              <div style="font-size:.75rem;font-weight:600;color:#15803d;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.6rem;">Strengths</div>
+              ${b.key_strengths.map(s => `<div style="display:flex;gap:.5rem;margin-bottom:.5rem;font-size:.875rem;color:#0f172a;"><span style="color:#059669;flex-shrink:0;">✓</span>${s}</div>`).join('')}
+            </div>` : ''}
+            ${b.key_risks && b.key_risks.length ? `
+            <div>
+              <div style="font-size:.75rem;font-weight:600;color:#a16207;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.6rem;">Considerations</div>
+              ${b.key_risks.map(r => `<div style="display:flex;gap:.5rem;margin-bottom:.5rem;font-size:.875rem;color:#0f172a;"><span style="color:#d97706;flex-shrink:0;">⚠</span>${r}</div>`).join('')}
+            </div>` : ''}
+          </div>` : ''}
+
+        </div>
+
+        <!-- Right sidebar -->
+        <div style="width:300px;flex-shrink:0;display:flex;flex-direction:column;gap:1.25rem;">
+
+          <!-- Decision -->
+          <div style="background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:.75rem;padding:1.25rem;">
+            <div style="font-size:.85rem;font-weight:600;color:#0f172a;margin-bottom:1rem;">Decision</div>
+            <button onclick="updateBorrowerStatus('${b.id}','approved')" style="width:100%;padding:.75rem;background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0;border-radius:.5rem;cursor:pointer;font-weight:600;font-size:.875rem;font-family:inherit;margin-bottom:.5rem;">✓ Approve</button>
+            <button onclick="updateBorrowerStatus('${b.id}','Under Review')" style="width:100%;padding:.75rem;background:#fffbeb;color:#a16207;border:1px solid #fde68a;border-radius:.5rem;cursor:pointer;font-weight:600;font-size:.875rem;font-family:inherit;margin-bottom:.5rem;">⟳ Request Review</button>
+            <button onclick="updateBorrowerStatus('${b.id}','declined')" style="width:100%;padding:.75rem;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:.5rem;cursor:pointer;font-weight:600;font-size:.875rem;font-family:inherit;">✗ Decline</button>
+          </div>
+
+          <!-- Key Outputs -->
+          <div style="background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:.75rem;padding:1.25rem;">
+            <div style="font-size:.85rem;font-weight:600;color:#0f172a;margin-bottom:1rem;">Key Outputs</div>
+            <div style="margin-bottom:.85rem;">
+              <div style="font-size:.72rem;color:#64748b;margin-bottom:.2rem;">Suggested Credit Limit</div>
+              <div style="font-size:1.75rem;font-weight:700;color:#0f172a;">${b.suggested_limit ? '$' + b.suggested_limit.toLocaleString() : '—'}</div>
+            </div>
+            <div style="margin-bottom:.85rem;">
+              <div style="font-size:.72rem;color:#64748b;margin-bottom:.2rem;">Suggested APR Band</div>
+              <div style="font-size:1.25rem;font-weight:600;color:#0f172a;">${b.suggested_apr_low && b.suggested_apr_high ? b.suggested_apr_low + '% – ' + b.suggested_apr_high + '%' : '—'}</div>
+            </div>
+            ${b.confidence ? `<div>
+              <div style="font-size:.72rem;color:#64748b;margin-bottom:.2rem;">Confidence Score</div>
+              <div style="font-size:1.25rem;font-weight:600;color:#0f172a;">${b.confidence}%</div>
+            </div>` : ''}
+          </div>
+
+          <!-- Submitted info -->
+          <div style="background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:.75rem;padding:1.25rem;">
+            <div style="font-size:.85rem;font-weight:600;color:#0f172a;margin-bottom:1rem;">Details</div>
+            ${[
+              ['Submitted', b.created_at ? new Date(b.created_at).toLocaleDateString('en-CA') : null],
+              ['Risk Tier', b.risk_tier],
+              ['Status', b.status],
+            ].filter(([,v]) => v).map(([l,v]) => `
+              <div style="display:flex;justify-content:space-between;padding:.5rem 0;border-bottom:1px solid #f8fafc;font-size:.82rem;">
+                <span style="color:#64748b;">${l}</span>
+                <span style="color:#0f172a;font-weight:500;">${v}</span>
+              </div>`).join('')}
+          </div>
+        </div>
+      </div>
+    `;
 
     currentProfileBorrowerId = borrowerId;
-    setTimeout(() => { if(typeof initCharts==='function') initCharts(); }, 100);
     showToast('Loaded profile: ' + b.name);
-  } catch(e) { console.error('openProfileFromDB error:', e); showToast('Error loading profile'); }
+  } catch(e) {
+    console.error('openProfileFromDB error:', e);
+    showToast('Error loading profile');
+  }
 }
 
 // Track requested docs per borrower
@@ -6106,6 +6279,224 @@ window.refreshAnalytics = refreshAnalytics;
 })();
 
 console.log('trbo real data layer loaded. supabase:', !!supabase);
+
+// ═══════════════════════════════════════
+// WORK QUEUES
+// ═══════════════════════════════════════
+let wqAllBorrowers = [];
+let wqCurrentQueue = 'awaiting';
+let wqCurrentFilter = 'all';
+
+async function renderWorkQueues() {
+  const _sbNow = (typeof _sb !== 'undefined') ? _sb : null;
+  if (!_sbNow || !currentLender) return;
+  const lenderId = DEMO_LENDER_IDS[currentLender.id] || currentLender.id;
+
+  try {
+    const { data: rows } = await _sbNow.from('borrowers').select('*')
+      .eq('lender_id', lenderId)
+      .eq('is_demo', false)  // Only real borrowers
+      .order('created_at', { ascending: false });
+
+    const all = rows || [];
+    wqAllBorrowers = all;
+
+    // Count queues
+    const awaiting = all.filter(b => b.status === 'Ready' || b.status === 'Processing' || b.status === 'pending');
+    const review = all.filter(b => b.status === 'Under Review');
+    const decided = all.filter(b => b.status === 'approved' || b.status === 'declined');
+
+    // Update sidebar badge
+    const badge = document.getElementById('wq-badge');
+    const totalAction = awaiting.length + review.length;
+    if (badge) {
+      badge.textContent = totalAction;
+      badge.style.display = totalAction > 0 ? 'inline-block' : 'none';
+    }
+
+    // Render cards
+    const grid = document.getElementById('wq-cards-grid');
+    if (!grid) return;
+
+    if (all.length === 0) {
+      grid.innerHTML = '<div style="text-align:center;padding:3rem;color:#94a3b8;grid-column:span 3;"><div style="font-size:2rem;margin-bottom:.75rem;">📋</div><div style="font-size:.875rem;">No borrowers yet. Share your affiliate link to get started.</div></div>';
+      return;
+    }
+
+    const queues = [
+      { id: 'awaiting', label: 'Awaiting Decision', desc: 'New submissions needing review', count: awaiting.length, color: '#2563eb', bg: '#eff6ff', icon: '⏳', items: awaiting },
+      { id: 'review', label: 'Under Review', desc: 'Flagged for manual underwriting', count: review.length, color: '#d97706', bg: '#fffbeb', icon: '🔍', items: review },
+      { id: 'decided', label: 'Decision Made', desc: 'Approved or declined today', count: decided.length, color: '#059669', bg: '#f0fdf4', icon: '✓', items: decided },
+    ];
+
+    grid.innerHTML = queues.map(q => `
+      <div onclick="openWQDetail('${q.id}', '${q.label}', '${q.desc}')"
+        style="background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:.75rem;padding:2rem;cursor:pointer;transition:all .15s;position:relative;"
+        onmouseover="this.style.borderColor='${q.color}';this.style.transform='translateY(-2px)'"
+        onmouseout="this.style.borderColor='rgba(0,0,0,0.08)';this.style.transform='none'">
+        ${q.count > 0 ? `<div style="position:absolute;top:1rem;right:1rem;background:${q.id === 'decided' ? q.color : '#dc2626'};color:#fff;font-size:.7rem;font-weight:700;padding:.2rem .55rem;border-radius:9999px;">${q.count}</div>` : ''}
+        <div style="width:56px;height:56px;border-radius:14px;background:${q.bg};display:flex;align-items:center;justify-content:center;font-size:1.5rem;margin-bottom:1.25rem;">${q.icon}</div>
+        <div style="font-size:1.1rem;font-weight:700;color:#0f172a;margin-bottom:.35rem;">${q.label}</div>
+        <div style="font-size:.82rem;color:#64748b;margin-bottom:1.25rem;">${q.desc}</div>
+        <div style="display:flex;align-items:center;gap:.5rem;">
+          <div style="font-size:2rem;font-weight:800;color:${q.color};">${q.count}</div>
+          <div style="font-size:.75rem;color:#94a3b8;">application${q.count !== 1 ? 's' : ''}</div>
+        </div>
+      </div>`).join('');
+
+  } catch(e) {
+    console.error('renderWorkQueues error:', e);
+  }
+}
+
+function openWQDetail(queueId, label, desc) {
+  wqCurrentQueue = queueId;
+  document.getElementById('wq-cards-view').style.display = 'none';
+  document.getElementById('wq-detail-view').style.display = 'block';
+  document.getElementById('wq-detail-title').textContent = label;
+  document.getElementById('wq-detail-sub').textContent = desc;
+  switchWQTab('awaiting');
+  loadWQBorrowers();
+}
+
+function showWQCards() {
+  document.getElementById('wq-cards-view').style.display = 'block';
+  document.getElementById('wq-detail-view').style.display = 'none';
+  document.getElementById('wq-search').value = '';
+}
+
+function switchWQTab(tab) {
+  const awaiting = document.getElementById('wq-tab-awaiting');
+  const decided = document.getElementById('wq-tab-decided');
+  if (tab === 'awaiting') {
+    awaiting.style.cssText = 'padding:.75rem 1.5rem;background:none;border:none;cursor:pointer;font-size:.875rem;font-weight:600;color:#455c62;border-bottom:2px solid #455c62;margin-bottom:-2px;font-family:inherit;';
+    decided.style.cssText = 'padding:.75rem 1.5rem;background:none;border:none;cursor:pointer;font-size:.875rem;color:#64748b;border-bottom:2px solid transparent;margin-bottom:-2px;font-family:inherit;';
+  } else {
+    decided.style.cssText = 'padding:.75rem 1.5rem;background:none;border:none;cursor:pointer;font-size:.875rem;font-weight:600;color:#455c62;border-bottom:2px solid #455c62;margin-bottom:-2px;font-family:inherit;';
+    awaiting.style.cssText = 'padding:.75rem 1.5rem;background:none;border:none;cursor:pointer;font-size:.875rem;color:#64748b;border-bottom:2px solid transparent;margin-bottom:-2px;font-family:inherit;';
+  }
+  wqCurrentFilter = tab;
+  loadWQBorrowers();
+}
+
+function loadWQBorrowers(searchTerm) {
+  const tbody = document.getElementById('wq-tbody');
+  if (!tbody) return;
+
+  let items = wqAllBorrowers;
+
+  // Filter by queue
+  if (wqCurrentQueue === 'awaiting') {
+    items = items.filter(b => b.status === 'Ready' || b.status === 'Processing' || b.status === 'pending');
+  } else if (wqCurrentQueue === 'review') {
+    items = items.filter(b => b.status === 'Under Review');
+  } else if (wqCurrentQueue === 'decided') {
+    items = items.filter(b => b.status === 'approved' || b.status === 'declined');
+  }
+
+  // Filter by tab
+  if (wqCurrentFilter === 'awaiting') {
+    items = items.filter(b => b.status !== 'approved' && b.status !== 'declined');
+  } else if (wqCurrentFilter === 'decided') {
+    items = items.filter(b => b.status === 'approved' || b.status === 'declined');
+  }
+
+  // Search
+  if (searchTerm) {
+    const q = searchTerm.toLowerCase();
+    items = items.filter(b => b.name && b.name.toLowerCase().includes(q));
+  }
+
+  if (items.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" style="padding:3rem;text-align:center;color:#94a3b8;">No applications in this queue</td></tr>';
+    return;
+  }
+
+  const scoreColor = sc => sc >= 750 ? '#059669' : sc >= 650 ? '#2563eb' : '#d97706';
+  const riskBg = r => r === 'Low' ? '#dcfce7' : r === 'High' ? '#fee2e2' : '#fef9c3';
+  const riskFg = r => r === 'Low' ? '#15803d' : r === 'High' ? '#dc2626' : '#a16207';
+  const statusBg = s => (s === 'approved') ? '#dcfce7' : s === 'declined' ? '#fee2e2' : s === 'Under Review' ? '#fef9c3' : '#dbeafe';
+  const statusFg = s => (s === 'approved') ? '#15803d' : s === 'declined' ? '#dc2626' : s === 'Under Review' ? '#a16207' : '#1d4ed8';
+
+  tbody.innerHTML = items.map(b => `
+    <tr style="border-bottom:1px solid #f8fafc;cursor:pointer;" onclick="openProfileFromDB('${b.id}')">
+      <td style="padding:.85rem 1.25rem;">
+        <div style="font-weight:500;color:#0f172a;font-size:.875rem;">${b.name}</div>
+        ${b.email ? `<div style="font-size:.72rem;color:#94a3b8;">${b.email}</div>` : ''}
+      </td>
+      <td style="padding:.85rem 1.25rem;font-size:.82rem;color:#64748b;">${b.origin_country || '—'} → ${b.destination_country || '—'}</td>
+      <td style="padding:.85rem 1.25rem;font-weight:700;color:${scoreColor(b.global_score)};font-size:.95rem;">${b.global_score || '—'}</td>
+      <td style="padding:.85rem 1.25rem;">
+        <span style="font-size:.72rem;font-weight:500;padding:.2rem .6rem;border-radius:9999px;background:${riskBg(b.risk)};color:${riskFg(b.risk)};">${b.risk || '—'}</span>
+      </td>
+      <td style="padding:.85rem 1.25rem;font-size:.78rem;color:#64748b;">${b.created_at ? new Date(b.created_at).toLocaleDateString('en-CA') + '<br><span style="color:#94a3b8;">' + new Date(b.created_at).toLocaleTimeString('en-CA', {hour:'2-digit',minute:'2-digit'}) + '</span>' : '—'}</td>
+      <td style="padding:.85rem 1.25rem;">
+        <span style="font-size:.72rem;font-weight:500;padding:.2rem .6rem;border-radius:9999px;background:${statusBg(b.status)};color:${statusFg(b.status)};">${b.status}</span>
+      </td>
+      <td style="padding:.85rem 1.25rem;text-align:right;" onclick="event.stopPropagation()">
+        ${b.status !== 'approved' && b.status !== 'declined' ? `
+          <div style="display:flex;gap:.4rem;justify-content:flex-end;">
+            <button onclick="wqDecide('${b.id}','approved')" style="padding:.35rem .75rem;background:#dcfce7;color:#15803d;border:1px solid #bbf7d0;border-radius:.35rem;cursor:pointer;font-size:.72rem;font-weight:600;font-family:inherit;">Approve</button>
+            <button onclick="wqDecide('${b.id}','Under Review')" style="padding:.35rem .75rem;background:#fef9c3;color:#a16207;border:1px solid #fde68a;border-radius:.35rem;cursor:pointer;font-size:.72rem;font-weight:600;font-family:inherit;">Review</button>
+            <button onclick="wqDecide('${b.id}','declined')" style="padding:.35rem .75rem;background:#fee2e2;color:#dc2626;border:1px solid #fecaca;border-radius:.35rem;cursor:pointer;font-size:.72rem;font-weight:600;font-family:inherit;">Decline</button>
+          </div>` : `<span style="font-size:.78rem;color:#94a3b8;">${b.status === 'approved' ? '✓ Approved' : '✗ Declined'}</span>`}
+      </td>
+    </tr>`).join('');
+}
+
+function filterWQBorrowers(val) {
+  loadWQBorrowers(val);
+}
+
+async function wqDecide(borrowerId, status) {
+  const _sbNow = (typeof _sb !== 'undefined') ? _sb : null;
+  if (!_sbNow) return;
+  const { error } = await _sbNow.from('borrowers').update({ status }).eq('id', borrowerId);
+  if (!error) {
+    showToast(status === 'approved' ? '✓ Approved' : status === 'declined' ? '✗ Declined' : '⟳ Sent to Review');
+    // Update local data
+    const b = wqAllBorrowers.find(b => b.id === borrowerId);
+    if (b) b.status = status;
+    loadWQBorrowers(document.getElementById('wq-search')?.value || '');
+    renderWorkQueues();
+    renderDashboard();
+  }
+}
+
+// Override showLenderPage to load work queues when navigated to
+const _origShowLenderPageWQ = typeof showLenderPage === 'function' ? showLenderPage : null;
+if (_origShowLenderPageWQ) {
+  showLenderPage = function(page, btn) {
+    _origShowLenderPageWQ(page, btn);
+    if (page === 'work-queues') {
+      // Reset to cards view
+      const cv = document.getElementById('wq-cards-view');
+      const dv = document.getElementById('wq-detail-view');
+      if (cv) cv.style.display = 'block';
+      if (dv) dv.style.display = 'none';
+      setTimeout(renderWorkQueues, 100);
+    }
+  };
+}
+
+// Refresh work queue badge when borrowers change
+const _origSaveBorrowerWQ = saveBorrowerToDB;
+saveBorrowerToDB = async function(scoreResult, formData) {
+  const result = await _origSaveBorrowerWQ(scoreResult, formData);
+  if (result) {
+    wqAllBorrowers.unshift(result);
+    renderWorkQueues();
+  }
+  return result;
+};
+
+window.wqDecide = wqDecide;
+window.openWQDetail = openWQDetail;
+window.showWQCards = showWQCards;
+window.switchWQTab = switchWQTab;
+window.filterWQBorrowers = filterWQBorrowers;
+window.renderWorkQueues = renderWorkQueues;
+
 </script>
 
 </body>
