@@ -162,8 +162,8 @@
       <button class="tl-nav-link" onclick="document.getElementById('tl-how').scrollIntoView({behavior:'smooth'})">How it works</button>
       <button class="tl-nav-link" onclick="document.getElementById('tl-features').scrollIntoView({behavior:'smooth'})">Features</button>
       <button class="tl-nav-link" onclick="document.getElementById('tl-pricing').scrollIntoView({behavior:'smooth'})">Pricing</button>
-      <button class="tl-nav-link" onclick="showTrboAuth('login')">Sign in</button>
-      <button class="tl-nav-cta" onclick="showTrboAuth('signup')">Get started free →</button>
+      <button class="tl-nav-link" onclick="window.location.href='/login'">Sign in</button>
+      <button class="tl-nav-cta" onclick="window.location.href='/signup'">Get started free →</button>
     </div>
   </nav>
 
@@ -173,11 +173,11 @@
     <h1 class="tl-h1">Credit that travels<br><em>with your borrowers</em></h1>
     <p class="tl-sub">trbo gives lenders instant credit decisions on migrants using their real global financial history — bank statements, payslips, remittances — no local credit history needed.</p>
     <div class="tl-hero-ctas">
-      <button class="tl-btn-primary" onclick="showTrboAuth('signup')">
+      <button class="tl-btn-primary" onclick="window.location.href='/signup'">
         Start for free
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
       </button>
-      <button class="tl-btn-secondary" onclick="showTrboAuth('login')">View demo portal</button>
+      <button class="tl-btn-secondary" onclick="window.location.href='/login'">View demo portal</button>
     </div>
   </section>
 
@@ -196,7 +196,7 @@
         <div class="tl-preview-label">The Lender Portal</div>
         <h2 class="tl-preview-title" style="text-align:left;">Everything your<br>team needs</h2>
         <p class="tl-preview-sub" style="text-align:left;">Approve, review, or decline cross-border borrowers in seconds. See their full financial profile — income, savings, remittance history — all verified by trbo.</p>
-        <button class="tl-btn-primary" onclick="showTrboAuth('login')">See live demo →</button>
+        <button class="tl-btn-primary" onclick="window.location.href='/login'">See live demo →</button>
       </div>
       <div class="tl-dash-mock">
         <div class="tl-dash-header">
@@ -339,7 +339,7 @@
         <div class="tl-plan-feature"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>3 team seats</div>
         <div class="tl-plan-feature"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Webhook events</div>
         <div class="tl-plan-feature"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Affiliate links</div>
-        <button class="tl-plan-cta" onclick="showTrboAuth('signup')">Get started</button>
+        <button class="tl-plan-cta" onclick="window.location.href='/signup'">Get started</button>
       </div>
       <div class="tl-plan featured">
         <div class="tl-plan-badge">Most popular</div>
@@ -352,7 +352,7 @@
         <div class="tl-plan-feature"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>White-label portal</div>
         <div class="tl-plan-feature"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Custom risk thresholds</div>
         <div class="tl-plan-feature"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Priority support</div>
-        <button class="tl-plan-cta" onclick="showTrboAuth('signup')">Start free trial</button>
+        <button class="tl-plan-cta" onclick="window.location.href='/signup'">Start free trial</button>
       </div>
       <div class="tl-plan">
         <div class="tl-plan-name">Enterprise</div>
@@ -374,8 +374,8 @@
     <h2>Issue the Global<br>Financial Passport.</h2>
     <p>Join lenders already using trbo to approve more borrowers, faster.</p>
     <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
-      <button class="tl-btn-primary" onclick="showTrboAuth('signup')" style="font-size:1rem;">Start for free →</button>
-      <button class="tl-btn-secondary" onclick="showTrboAuth('login')" style="font-size:1rem;">View live demo</button>
+      <button class="tl-btn-primary" onclick="window.location.href='/signup'" style="font-size:1rem;">Start for free →</button>
+      <button class="tl-btn-secondary" onclick="window.location.href='/login'" style="font-size:1rem;">View live demo</button>
     </div>
   </div>
 
@@ -4017,7 +4017,7 @@ async function validateDocType(file, expectedType) {
 }
 
 // ── AUTH FUNCTIONS
-function showAuth(tab) { showTrboAuth(tab); }
+function showAuth(tab) { window.location.href = tab === 'signup' ? '/signup' : '/login'; }
 
 function switchAuthTab(tab) {
   document.getElementById('auth-login').style.display = tab === 'login' ? 'block' : 'none';
@@ -4180,11 +4180,7 @@ function showLanding() {
   if(landing) { landing.style.display = 'block'; landing.classList.add('active'); }
 }
 
-function showTrboAuth(tab) {
-  document.querySelectorAll('.view').forEach(v => {
-    v.style.display = 'none';
-    v.classList.remove('active');
-  });
+function showTrboAuth(tab) { window.location.href = tab === 'signup' ? '/signup' : '/login'; });
   const auth = document.getElementById('auth-screen');
   if(auth) { auth.style.display = 'flex'; auth.classList.add('active'); }
   if(typeof switchAuthTab === 'function') switchAuthTab(tab || 'login');
@@ -5083,9 +5079,7 @@ async function saveBorrowerToDB(scoreResult, formData) {
 </body
 <script>
   // Wire up nav buttons to login page
-  function showTrboAuth(tab) {
-    window.location.href = '/login';
-  }
+  function showTrboAuth(tab) { window.location.href = tab === 'signup' ? '/signup' : '/login'; }
   function showLanding() {}
 </script>
 </body>
