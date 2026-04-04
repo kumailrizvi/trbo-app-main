@@ -3498,9 +3498,9 @@ function renderAffiliateLinks() {
   const page = document.getElementById('page-affiliate');
   if(!page) return;
   const l = currentLender;
-  const baseUrl = 'https://apply.trbo.io';
+  const baseUrl = window.location.origin + '/portal.html';
   const link = `${baseUrl}?ref=${l.affiliateCode}`;
-  const whitelabelLink = `https://${l.name.toLowerCase().replace(/\s+/g,'')}.trbo.io/apply`;
+  const whitelabelLink = window.location.origin + '/portal.html?ref=' + l.affiliateCode;
 
   page.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;">
@@ -3564,7 +3564,7 @@ function renderAffiliateLinks() {
           </div>
           <div>
             <label style="display:block;font-size:.72rem;font-weight:600;color:#475569;margin-bottom:.3rem;text-transform:uppercase;letter-spacing:.04em;">Custom Domain</label>
-            <input value="${l.domain||'apply.trbo.io'}" oninput="WL_CONFIG[currentLender.id].domain=this.value" style="width:100%;padding:.55rem .85rem;border:1px solid #e2e8f0;border-radius:.4rem;font-size:.82rem;background:#f3f3f5;outline:none;box-sizing:border-box;">
+            <input value="${l.domain || (window.location.origin + '/portal.html')}" oninput="WL_CONFIG[currentLender.id].domain=this.value" style="width:100%;padding:.55rem .85rem;border:1px solid #e2e8f0;border-radius:.4rem;font-size:.82rem;background:#f3f3f5;outline:none;box-sizing:border-box;">
           </div>
           <div>
             <label style="display:block;font-size:.72rem;font-weight:600;color:#475569;margin-bottom:.3rem;text-transform:uppercase;letter-spacing:.04em;">Welcome Message</label>
@@ -3629,7 +3629,7 @@ function showQRCode(url) {
 
 function generateNewLink() {
   const name = prompt('Campaign name:');
-  if(name) showToast('Link generated: apply.trbo.io?ref=' + currentLender.affiliateCode + '&utm=' + name.toLowerCase().replace(/\s+/g,'_'));
+  if(name) showToast('Link generated: ' + window.location.origin + '/portal.html?ref=' + currentLender.affiliateCode + '&utm=' + name.toLowerCase().replace(/\s+/g,'_'));
 }
 
 // ── MULTI-USER MANAGEMENT PAGE
@@ -5375,7 +5375,7 @@ async function saveBorrowerToDB(scoreResult, formData) {
             <textarea placeholder="Welcome to our credit onboarding..." style="width:100%;padding:.7rem .9rem;border:1px solid #e2e8f0;border-radius:.5rem;font-size:.82rem;outline:none;background:#f3f3f5;resize:none;height:70px;box-sizing:border-box;font-family:Inter,sans-serif;"></textarea>
           </div>
           <div style="padding:1rem;background:#eff6ff;border:1px solid #bfdbfe;border-radius:.5rem;font-size:.78rem;color:#1d4ed8;">
-            Your portal will be live at <strong>apply.trbo.io?ref=your-code</strong> immediately after setup
+            Your portal will be live at <strong>${window.location.origin}/portal.html?ref=your-code</strong> immediately after setup
           </div>
         </div>
       </div>
