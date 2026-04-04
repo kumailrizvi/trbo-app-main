@@ -1825,9 +1825,7 @@ const DEMO_LENDER_IDS = {
   'lender_borrowell': '22222222-2222-2222-2222-222222222222',
   'lender_rbc': '33333333-3333-3333-3333-333333333333',
 };
-// Supabase client (window.supabase from CDN)
-const supabase = (window.supabase && window.supabase.createClient)
-  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+// Use _sb client (defined below in main script)
 
 
 // Session state
@@ -5667,12 +5665,12 @@ function dbRowToDisplay(row) {
 // ── 1. Override renderDashboard to use Supabase
 const _origRenderDashboard = typeof renderDashboard === 'function' ? renderDashboard : null;
 renderDashboard = async function() {
-  if (!supabase || !currentLender) { if(_origRenderDashboard) _origRenderDashboard(); return; }
+  if (!_sb || !currentLender) { if(_origRenderDashboard) _origRenderDashboard(); return; }
   const lenderId = getDbLenderId();
   if (!lenderId) { if(_origRenderDashboard) _origRenderDashboard(); return; }
 
   try {
-    const { data: rows } = await supabase.from('borrowers').select('*')
+    const { data: rows } = await _sb.from('borrowers').select('*')
       .eq('lender_id', lenderId).order('created_at', { ascending: false });
 
     if (!rows || rows.length === 0) { if(_origRenderDashboard) _origRenderDashboard(); return; }
@@ -5718,12 +5716,12 @@ renderDashboard = async function() {
 // ── 2. Override renderBorrowers to use Supabase
 const _origRenderBorrowers = typeof renderBorrowers === 'function' ? renderBorrowers : null;
 renderBorrowers = async function() {
-  if (!supabase || !currentLender) { if(_origRenderBorrowers) _origRenderBorrowers(); return; }
+  if (!_sb || !currentLender) { if(_origRenderBorrowers) _origRenderBorrowers(); return; }
   const lenderId = getDbLenderId();
   if (!lenderId) { if(_origRenderBorrowers) _origRenderBorrowers(); return; }
 
   try {
-    const { data: rows } = await supabase.from('borrowers').select('*')
+    const { data: rows } = await _sb.from('borrowers').select('*')
       .eq('lender_id', lenderId).order('created_at', { ascending: false });
 
     if (!rows) { if(_origRenderBorrowers) _origRenderBorrowers(); return; }
@@ -5763,9 +5761,9 @@ renderBorrowers = async function() {
 
 // ── 3. viewBorrower - fetch from Supabase and show profile
 async function viewBorrower(id) {
-  if (!supabase) return;
+  if (!_sb) return;
   try {
-    const { data: row } = await supabase.from('borrowers').select('*').eq('id', id).single();
+    const { data: row } = await _sb.from('borrowers').select('*').eq('id', id).single();
     if (!row) return;
     const scoreColor = row.global_score >= 750 ? '#059669' : row.global_score >= 650 ? '#2563eb' : '#d97706';
     const profileHtml = `
@@ -5862,8 +5860,8 @@ async function viewBorrower(id) {
 
 // ── 4. updateBorrowerStatus
 async function updateBorrowerStatus(id, status) {
-  if (!supabase) return;
-  const { error } = await supabase.from('borrowers').update({ status }).eq('id', id);
+  if (!_sb) return;
+  const { error } = await _sb.from('borrowers').update({ status }).eq('id', id);
   if (!error) {
     showToast('Status updated to: ' + status);
     renderBorrowers();
@@ -5948,11 +5946,11 @@ if (_origCallClaude) {
 // ── 7. Portfolio Analytics - real data
 const _origRenderAnalytics = typeof renderAnalytics === 'function' ? renderAnalytics : null;
 async function refreshAnalytics() {
-  if (!supabase || !currentLender) return;
+  if (!_sb || !currentLender) return;
   const lenderId = getDbLenderId();
   if (!lenderId) return;
   try {
-    const { data: rows } = await supabase.from('borrowers').select('*').eq('lender_id', lenderId);
+    const { data: rows } = await _sb.from('borrowers').select('*').eq('lender_id', lenderId);
     if (!rows || rows.length === 0) return;
 
     const total = rows.length;
@@ -5985,10 +5983,10 @@ if (_origShowLenderPage) {
 
 // ── 8. Settings - save to Supabase lenders table
 async function saveSettings() {
-  if (!supabase || !currentLender) { showToast('Settings saved locally'); return; }
+  if (!_sb || !currentLender) { showToast('Settings saved locally'); return; }
   const lenderId = getDbLenderId();
   const webhookUrl = document.getElementById('wh-url')?.value || document.querySelector('#webhook-list input')?.value || null;
-  const { error } = await supabase.from('lenders').update({
+  const { error } = await _sb.from('lenders').update({
     webhook_url: webhookUrl,
   }).eq('id', lenderId);
   if (!error) showToast('✓ Settings saved');
@@ -5997,11 +5995,11 @@ async function saveSettings() {
 
 // ── 9. Risk Thresholds - save to Supabase lenders table
 async function saveRiskThresholds() {
-  if (!supabase || !currentLender) { showToast('Thresholds saved locally'); return; }
+  if (!_sb || !currentLender) { showToast('Thresholds saved locally'); return; }
   const lenderId = getDbLenderId();
   const minScoreEl = document.getElementById('rt-min-score') || document.querySelector('[data-risk="min_score"]');
   const minScore = minScoreEl ? parseInt(minScoreEl.value) : currentLender.minScore;
-  const { error } = await supabase.from('lenders').update({
+  const { error } = await _sb.from('lenders').update({
     min_score: minScore,
   }).eq('id', lenderId);
   if (!error) { showToast('✓ Risk thresholds saved'); currentLender.minScore = minScore; }
