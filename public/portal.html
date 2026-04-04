@@ -3826,10 +3826,11 @@ const LENDER_BORROWERS = {
 const _origRenderBorrowers = typeof renderBorrowers === 'function' ? renderBorrowers : function(){};
 renderBorrowers = async function() {
   // Try Supabase first
-  if(SUPABASE_URL !== 'YOUR_SUPABASE_URL' && currentLender?.id) {
+  const _sbClient = (typeof _sb !== 'undefined' ? _sb : null);
+  if(_sbClient && currentLender?.id) {
     try {
       const lenderId = DEMO_LENDER_IDS[currentLender.id] || currentLender.id;
-      const { data: rows, error } = await _sb.from('borrowers').select('*').eq('lender_id', lenderId).order('created_at', { ascending: false });
+      const { data: rows, error } = await _sbClient.from('borrowers').select('*').eq('lender_id', lenderId).order('created_at', { ascending: false });
       if(!error && rows && rows.length > 0) {
         renderBorrowerRowsFromDB(rows);
         updateDashboardStats(rows);
@@ -5665,12 +5666,13 @@ function dbRowToDisplay(row) {
 // ── 1. Override renderDashboard to use Supabase
 const _origRenderDashboard = typeof renderDashboard === 'function' ? renderDashboard : null;
 renderDashboard = async function() {
-  if (!_sb || !currentLender) { if(_origRenderDashboard) _origRenderDashboard(); return; }
+  const _sbClient = (typeof _sb !== 'undefined' ? _sb : null);
+  if (!_sbClient || !currentLender) { if(_origRenderDashboard) _origRenderDashboard(); return; }
   const lenderId = getDbLenderId();
   if (!lenderId) { if(_origRenderDashboard) _origRenderDashboard(); return; }
 
   try {
-    const { data: rows } = await _sb.from('borrowers').select('*')
+    const { data: rows } = await _sbClient.from('borrowers').select('*')
       .eq('lender_id', lenderId).order('created_at', { ascending: false });
 
     if (!rows || rows.length === 0) { if(_origRenderDashboard) _origRenderDashboard(); return; }
