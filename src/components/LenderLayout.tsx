@@ -2,21 +2,17 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import {
-  LayoutDashboard, Users, Search, BarChart2, Link2,
-  Shield, Terminal, Users2, Settings, LogOut, Lock, ChevronDown
-} from 'lucide-react'
 
 const NAV = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, href: '/lender/dashboard' },
-  { id: 'borrowers', label: 'Borrowers', icon: Users, href: '/lender/borrowers' },
-  { id: 'run-check', label: 'Run Check', icon: Search, href: '/lender/run-check' },
-  { id: 'analytics', label: 'Analytics', icon: BarChart2, href: '/lender/analytics' },
-  { id: 'affiliate', label: 'Affiliate Links', icon: Link2, href: '/lender/affiliate' },
-  { id: 'pricing', label: 'Pricing Engine', icon: Shield, href: '/lender/pricing' },
-  { id: 'webhooks', label: 'Webhooks', icon: Terminal, href: '/lender/webhooks' },
-  { id: 'team', label: 'Team', icon: Users2, href: '/lender/team' },
-  { id: 'settings', label: 'Settings', icon: Settings, href: '/lender/settings' },
+  { label: 'Dashboard', href: '/lender/dashboard', icon: <svg fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" width={18} height={18}><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg> },
+  { label: 'Borrowers', href: '/lender/borrowers', icon: <svg fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" width={18} height={18}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
+  { label: 'Run Check', href: '/lender/run-check', icon: <svg fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" width={18} height={18}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> },
+  { label: 'Analytics', href: '/lender/analytics', icon: <svg fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" width={18} height={18}><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> },
+  { label: 'Affiliate Links', href: '/lender/affiliate', icon: <svg fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" width={18} height={18}><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> },
+  { label: 'Pricing Engine', href: '/lender/pricing', icon: <svg fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" width={18} height={18}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> },
+  { label: 'Webhooks', href: '/lender/webhooks', icon: <svg fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" width={18} height={18}><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg> },
+  { label: 'Team', href: '/lender/team', icon: <svg fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" width={18} height={18}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
+  { label: 'Settings', href: '/lender/settings', icon: <svg fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" width={18} height={18}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> },
 ]
 
 type Props = {
@@ -37,71 +33,69 @@ export default function LenderLayout({ lenderName, lenderColor, isAdmin, childre
   }
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: '#f8fafc' }}>
+    <div style={{display:'flex',height:'100vh',overflow:'hidden',fontFamily:"'DM Sans',sans-serif"}}>
       {/* Sidebar */}
-      <aside className="w-56 flex-shrink-0 flex flex-col" style={{ background: '#455c62' }}>
-        <div className="px-5 py-6 border-b border-white/10">
-          <div style={{ fontFamily: "'DM Serif Display',serif", fontSize: '1.5rem', color: 'white' }}>trbo.</div>
-          <div style={{ fontSize: '10px', letterSpacing: '0.25em', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', marginTop: '2px' }}>Financial</div>
+      <div style={{width:240,background:'#455c62',borderRight:'1px solid #344a50',flexShrink:0,display:'flex',flexDirection:'column',height:'100vh',overflowY:'auto'}}>
+        {/* Header */}
+        <div style={{padding:'1.5rem',borderBottom:'1px solid rgba(255,255,255,0.1)'}}>
+          <div style={{fontFamily:"'Segoe UI','Segoe',Georgia,serif",fontSize:'2rem',fontWeight:400,color:'#ffffff',letterSpacing:'-0.01em',lineHeight:1}}>trbo.</div>
+          <div style={{fontSize:'0.58rem',letterSpacing:'0.28em',color:'rgba(255,255,255,0.5)',textTransform:'uppercase',marginTop:'0.3rem'}}>Financial</div>
         </div>
 
-        <div className="px-3 py-3 border-b border-white/10">
-          <div className="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-2">
-            <div className="w-6 h-6 rounded-md flex items-center justify-center text-white font-bold text-xs flex-shrink-0"
-              style={{ background: lenderColor }}>{lenderName[0]}</div>
-            <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.8)', fontWeight: 500 }} className="truncate flex-1">{lenderName}</span>
-            {isAdmin && <ChevronDown size={12} style={{ color: 'rgba(255,255,255,0.4)' }} />}
+        {/* Lender badge */}
+        <div style={{padding:'0.5rem 0.75rem',borderBottom:'1px solid rgba(255,255,255,0.1)'}}>
+          <div style={{width:'100%',display:'flex',alignItems:'center',gap:'0.6rem',background:'rgba(255,255,255,0.08)',border:'none',borderRadius:'0.4rem',padding:'0.5rem 0.75rem'}}>
+            <div style={{width:24,height:24,borderRadius:6,background:lenderColor,flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,fontSize:'0.7rem',color:'#fff'}}>{lenderName[0]}</div>
+            <span style={{flex:1,fontSize:'0.78rem',color:'rgba(255,255,255,0.85)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{lenderName}</span>
           </div>
         </div>
 
-        <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto">
+        {/* Nav */}
+        <nav style={{padding:'0.75rem 0.5rem',flex:1}}>
           {NAV.map(item => {
-            const Icon = item.icon
             const active = pathname === item.href
             return (
-              <Link key={item.id} href={item.href}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '10px',
-                  padding: '10px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 500,
-                  textDecoration: 'none',
-                  background: active ? 'rgba(255,255,255,0.2)' : 'transparent',
-                  color: active ? 'white' : 'rgba(255,255,255,0.55)',
-                }}>
-                <Icon size={15} />{item.label}
+              <Link key={item.href} href={item.href} style={{
+                display:'flex',alignItems:'center',gap:'0.75rem',
+                padding:'0.75rem 1rem',borderRadius:'0.5rem',marginBottom:2,
+                color: active ? 'white' : 'rgba(255,255,255,0.7)',
+                fontSize:'0.9rem',textDecoration:'none',
+                background: active ? 'rgba(255,255,255,0.15)' : 'transparent',
+                fontWeight: active ? 500 : 400,
+              }}>
+                {item.icon}{item.label}
               </Link>
             )
           })}
+
           {isAdmin && (
             <>
-              <div style={{ margin: '8px 0', borderTop: '1px solid rgba(255,255,255,0.1)' }} />
-              <Link href="/lender/all-lenders"
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '10px',
-                  padding: '10px 12px', borderRadius: '8px', fontSize: '12px',
-                  color: 'rgba(255,255,255,0.4)', textDecoration: 'none',
-                }}>
-                <Lock size={13} />All Lenders
+              <div style={{margin:'0.5rem 0',borderTop:'1px solid rgba(255,255,255,0.1)'}}/>
+              <Link href="/lender/all-lenders" style={{display:'flex',alignItems:'center',gap:'0.75rem',padding:'0.75rem 1rem',borderRadius:'0.5rem',color:'rgba(255,255,255,0.5)',fontSize:'0.78rem',textDecoration:'none'}}>
+                <svg fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" width={15} height={15}><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                All Lenders (Admin)
               </Link>
             </>
           )}
         </nav>
 
-        <div className="px-2 pb-4">
-          <button onClick={signOut}
-            style={{
-              width: '100%', display: 'flex', alignItems: 'center', gap: '10px',
-              padding: '10px 12px', borderRadius: '8px', fontSize: '12px',
-              color: 'rgba(255,255,255,0.4)', background: 'none', border: 'none', cursor: 'pointer',
-            }}>
-            <LogOut size={14} />Sign out
+        {/* Back to home */}
+        <div style={{padding:'1rem 0.5rem',borderTop:'1px solid rgba(255,255,255,0.1)'}}>
+          <button onClick={() => router.push('/portal')} style={{display:'flex',alignItems:'center',gap:'0.5rem',padding:'0.6rem 1rem',width:'100%',background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,0.5)',fontSize:'0.85rem',borderRadius:'0.5rem',fontFamily:'inherit'}}>
+            <svg viewBox="0 0 24 24" width={16} height={16} fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Home
+          </button>
+          <button onClick={signOut} style={{display:'flex',alignItems:'center',gap:'0.5rem',padding:'0.6rem 1rem',width:'100%',background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,0.4)',fontSize:'0.85rem',borderRadius:'0.5rem',fontFamily:'inherit'}}>
+            <svg viewBox="0 0 24 24" width={16} height={16} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Sign out
           </button>
         </div>
-      </aside>
+      </div>
 
-      {/* Main content */}
-      <main className="flex-1 overflow-y-auto">
+      {/* Main */}
+      <div style={{flex:1,overflowY:'auto',background:'#f8fafc'}}>
         {children}
-      </main>
+      </div>
     </div>
   )
 }
