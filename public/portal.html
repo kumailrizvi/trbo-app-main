@@ -3164,12 +3164,63 @@ function updateDashboardStats(rows) {
 
 // Open profile from DB row by borrower ID
 async function openProfileFromDB(borrowerId) {
-  // Use viewBorrower which renders a complete real-data profile
-  if (typeof viewBorrower === 'function') {
-    await viewBorrower(borrowerId);
-  } else {
-    showToast('Profile viewer not ready');
-  }
+  const _sbNow = (typeof _sb !== 'undefined') ? _sb : null;
+  if (!_sbNow) { showToast('Not connected'); return; }
+  try {
+    const { data: b, error } = await _sbNow.from('borrowers').select('*').eq('id', borrowerId).single();
+    if (error || !b) { showToast('Could not load profile'); return; }
+
+    // Show the profile-view (original rich HTML)
+    document.querySelectorAll('.view').forEach(v => { v.style.display = 'none'; v.classList.remove('active'); });
+    // Also hide lender pages
+    document.querySelectorAll('.lender-page').forEach(p => p.style.display = 'none');
+    const pv = document.getElementById('profile-view');
+    if (pv) { pv.style.display = 'block'; }
+
+    // Populate fields with real data
+    const set = (id, val) => { const el = document.getElementById(id); if (el && val) el.textContent = val; };
+    set('pv-name', b.name);
+    set('pv-breadcrumb', b.name);
+    set('pv-corridor', (b.origin_country || '') + ' → ' + (b.destination_country || ''));
+    set('pv-score', b.global_score || '—');
+    set('pv-risk', (b.risk || 'Low') + ' Risk');
+    set('pv-employer', b.employer || 'Not provided');
+
+    // Score color
+    const scoreEl = document.getElementById('pv-score');
+    if (scoreEl) {
+      const sc = b.global_score || 0;
+      scoreEl.style.color = sc >= 750 ? '#059669' : sc >= 650 ? '#2563eb' : '#d97706';
+    }
+
+    // Key outputs
+    const setProf = (id, val) => { const el = document.getElementById(id); if (el && val) el.textContent = val; };
+    setProf('prof-credit', b.suggested_limit ? '$' + b.suggested_limit.toLocaleString() : '—');
+    setProf('prof-apr', b.suggested_apr_low && b.suggested_apr_high ? b.suggested_apr_low + '% – ' + b.suggested_apr_high + '%' : '—');
+
+    // Income section
+    if (b.income_usd) {
+      const incomeEls = pv ? pv.querySelectorAll('[data-field="income"]') : [];
+      incomeEls.forEach(el => el.textContent = '$' + b.income_usd.toLocaleString() + '/mo');
+    }
+
+    // Analyst narrative
+    if (b.analyst_narrative) {
+      let narEl = document.getElementById('pv-narrative');
+      if (!narEl) {
+        narEl = document.createElement('div');
+        narEl.id = 'pv-narrative';
+        narEl.style.cssText = 'background:#f8fafc;border:1px solid #e2e8f0;border-radius:.75rem;padding:1.25rem;margin:1.25rem 2.5rem;font-size:.875rem;color:#475569;line-height:1.7;font-style:italic;';
+        const pvBody = pv ? pv.querySelector('[style*="max-width:1200px"]') : null;
+        if (pvBody) pvBody.insertBefore(narEl, pvBody.firstChild);
+      }
+      narEl.innerHTML = '<strong style="color:#0f172a;font-style:normal;">Analyst Summary:</strong> "' + b.analyst_narrative + '"';
+    }
+
+    currentProfileBorrowerId = borrowerId;
+    setTimeout(() => { if(typeof initCharts==='function') initCharts(); }, 100);
+    showToast('Loaded profile: ' + b.name);
+  } catch(e) { console.error('openProfileFromDB error:', e); showToast('Error loading profile'); }
 }
 
 // Track requested docs per borrower
