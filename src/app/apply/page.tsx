@@ -94,6 +94,7 @@ function BorrowerPortalContent() {
   const [step, setStep] = useState<Step>('welcome')
   const [parsedDocs, setParsedDocs] = useState<ParsedDocs>({})
   const [docStatus, setDocStatus] = useState<Partial<Record<DocType, 'loading'|'done'|'error'>>>({})
+  const [docErrors, setDocErrors] = useState<Partial<Record<DocType, string>>>({})
   const [docNames, setDocNames] = useState<Partial<Record<DocType, string>>>({})
   const [result, setResult] = useState<Record<string,unknown>|null>(null)
   const [form, setForm] = useState({
@@ -108,6 +109,7 @@ function BorrowerPortalContent() {
 
   async function handleUpload(file: File, docType: DocType) {
     setDocStatus(s => ({...s,[docType]:'loading'}))
+    setDocErrors(s => ({ ...s, [docType]: '' }))
     setDocNames(n => ({...n,[docType]:file.name}))
     try {
       const base64 = await new Promise<string>((res,rej) => {
@@ -130,6 +132,10 @@ function BorrowerPortalContent() {
           { type:'text', text: prompts[docType] }
         ]})
       })
+      if (!resp.ok) {
+        const payload = await resp.json().catch(() => ({}))
+        throw new Error(payload.error || `Upload failed (${resp.status})`)
+      }
       const parsed = await resp.json()
       setParsedDocs(d => ({...d,[docType]:parsed}))
       setDocStatus(s => ({...s,[docType]:'done'}))
@@ -144,8 +150,9 @@ function BorrowerPortalContent() {
         const parts = (parsed.full_name as string).split(' ')
         setForm(f => ({...f, firstName: parts[0]||'', lastName: parts.slice(1).join(' ')||''}))
       }
-    } catch {
+    } catch (error: unknown) {
       setDocStatus(s => ({...s,[docType]:'error'}))
+      setDocErrors(s => ({ ...s, [docType]: error instanceof Error ? error.message : 'Document parsing failed. Please retry.' }))
     }
   }
 
@@ -213,9 +220,13 @@ Score this borrower using the TRBO 7-factor methodology.`
   function removeDoc(docType: DocType) {
     setParsedDocs(d => { const n = {...d}; delete n[docType]; return n })
     setDocStatus(s => { const n = {...s}; delete n[docType]; return n })
+    setDocErrors(s => { const n = {...s}; delete n[docType]; return n })
     setDocNames(n => { const nd = {...n}; delete nd[docType]; return nd })
     if (fileRefs.current[docType]) fileRefs.current[docType]!.value = ''
   }
+
+  const requiredDocsUploaded = docStatus.bank === 'done' && docStatus.passport === 'done'
+  const hasPendingUploads = Object.values(docStatus).some(s => s === 'loading')
 
   const scoreColor = result ? (
     (result.global_score as number) >= 750 ? '#059669' :
@@ -326,6 +337,13 @@ Score this borrower using the TRBO 7-factor methodology.`
                         <div className="loading-spinner" style={{width:16,height:16,borderWidth:2,margin:0}} />
                         trbo is reading {docNames[doc.key]}...
                       </div>
+                    ) : docStatus[doc.key] === 'error' ? (
+                      <div style={{padding:'0.7rem 0.85rem',background:'#fff7ed',border:'1px solid #fed7aa',borderRadius:'0.4rem'}}>
+                        <div style={{fontSize:'0.8rem',fontWeight:600,color:'#c2410c',marginBottom:'0.35rem'}}>⚠ Upload failed</div>
+                        <div style={{fontSize:'0.76rem',color:'#9a3412',marginBottom:'0.6rem'}}>{docErrors[doc.key] || 'Please try again with a smaller or clearer file.'}</div>
+                        <button className="upload-choose-btn gold" type="button" onClick={() => fileRefs.current[doc.key]?.click()}>Retry Upload</button>
+                        <input ref={el => { fileRefs.current[doc.key] = el }} type="file" accept=".pdf,.png,.jpg,.jpeg" style={{display:'none'}} onChange={e => { if(e.target.files?.[0]) handleUpload(e.target.files[0], doc.key) }} />
+                      </div>
                     ) : (
                       <div className="upload-dropzone" onClick={() => fileRefs.current[doc.key]?.click()}>
                         <svg viewBox="0 0 24 24" style={{width:28,height:28,stroke:'#94a3b8',fill:'none',strokeWidth:1.5,strokeLinecap:'round',strokeLinejoin:'round',display:'block',margin:'0 auto 0.4rem'}}><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
@@ -380,8 +398,13 @@ Score this borrower using the TRBO 7-factor methodology.`
 
             <div className="bform-actions">
               <button className="btn-secondary" onClick={() => setStep('welcome')}>← Back</button>
-              <button className="btn-primary" onClick={() => setStep('form')}>Continue to Your Details →</button>
+              <button className="btn-primary" disabled={!requiredDocsUploaded || hasPendingUploads} onClick={() => setStep('form')} style={{opacity: (!requiredDocsUploaded || hasPendingUploads) ? 0.6 : 1, cursor: (!requiredDocsUploaded || hasPendingUploads) ? 'not-allowed' : 'pointer'}}>
+                Continue to Your Details →
+              </button>
             </div>
+            {!requiredDocsUploaded && (
+              <div style={{fontSize:'0.78rem',color:'#b45309',marginTop:'0.7rem'}}>Please upload the required documents (Bank Statement + Passport/ID) to continue.</div>
+            )}
           </div>
         </div>
       )}
@@ -499,7 +522,7 @@ Score this borrower using the TRBO 7-factor methodology.`
             <h2 style={{fontSize:'1.5rem',fontWeight:600,color:'#0f172a',marginBottom:'0.75rem'}}>Analysing your financial profile…</h2>
             <p style={{color:'#64748b',fontSize:'0.9rem',marginBottom:'2rem'}}>Reading documents · Scoring income · Calculating risk</p>
             <div style={{display:'flex',flexDirection:'column',gap:'0.6rem',maxWidth:320,width:'100%'}}>
-              {['Reading document data','Verifying income consistency','Calculating remittance score','Generating credit profile'].map((item,i) => (
+              {['Reading document data','Verifying income consistency','Calculating remittance score','Generating credit profile'].map((item) => (
                 <div key={item} style={{display:'flex',alignItems:'center',gap:'0.6rem',fontSize:'0.82rem',color:'#64748b'}}>
                   <svg viewBox="0 0 24 24" width={14} height={14} fill="none" stroke="#455c62" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                   {item}
@@ -581,7 +604,7 @@ Score this borrower using the TRBO 7-factor methodology.`
                     </div>
                   )}
                   {result.analyst_narrative && (
-                    <div className="analyst-box">"{result.analyst_narrative as string}"</div>
+                    <div className="analyst-box">&ldquo;{result.analyst_narrative as string}&rdquo;</div>
                   )}
                 </div>
               </div>

@@ -18,10 +18,11 @@ export async function POST(req: NextRequest) {
 
     if (content.length === 0) return NextResponse.json({ error: 'No content' }, { status: 400 })
 
-    // Retry up to 4 times with exponential backoff
-    for (let attempt = 0; attempt < 4; attempt++) {
+    // Retry up to 6 times with exponential backoff and jitter.
+    for (let attempt = 0; attempt < 6; attempt++) {
       if (attempt > 0) {
-        await new Promise(r => setTimeout(r, attempt * 4000)) // 4s, 8s, 12s
+        const delayMs = Math.min(3000 * 2 ** (attempt - 1), 30000) + Math.floor(Math.random() * 700)
+        await new Promise(r => setTimeout(r, delayMs))
       }
 
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -42,8 +43,19 @@ export async function POST(req: NextRequest) {
       })
 
       if (response.status === 429) {
-        console.log(`Rate limited, attempt ${attempt + 1}/4`)
-        if (attempt === 3) return NextResponse.json({ error: 'Rate limited — please wait 30s and retry' }, { status: 429 })
+        const retryAfterHeader = response.headers.get('retry-after')
+        const retryAfterSeconds = retryAfterHeader ? Number(retryAfterHeader) : NaN
+        if (Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0) {
+          await new Promise(r => setTimeout(r, Math.min(retryAfterSeconds, 45) * 1000))
+        }
+
+        console.log(`Rate limited, attempt ${attempt + 1}/6`)
+        if (attempt === 5) {
+          return NextResponse.json(
+            { error: 'API rate-limited by model provider. Wait ~60s, then retry with smaller/clearer files.' },
+            { status: 429 },
+          )
+        }
         continue
       }
 

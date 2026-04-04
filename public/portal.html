@@ -4,45 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>trbo Portal</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js">
-// ── AUTO LOGIN FROM NEXT.JS
-(function autoLoginFromNextJS() {
-  const demoId = localStorage.getItem('trbo_demo_lender');
-  if (!demoId) return; // No session — landing shows by default
-
-  // Hide landing before it renders
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+window.__TRBO_DEMO_ID__ = localStorage.getItem('trbo_demo_lender') || '';
+if (window.__TRBO_DEMO_ID__) {
   document.write('<style>#trbo-landing{display:none!important}</style>');
-
-  // Wait for full page load before navigating
-  window.addEventListener('load', function() {
-    const demoMap = {
-      'lender_koho': 'lender_koho',
-      'lender_borrowell': 'lender_borrowell',
-      'lender_rbc': 'lender_rbc',
-      'trbo_admin': 'trbo_admin',
-    };
-    const lenderId = demoMap[demoId];
-    if (!lenderId) return;
-
-    try {
-      if (lenderId === 'trbo_admin') {
-        currentSession = { role: 'trbo_admin', lenderId: 'trbo_admin' };
-        currentLender = LENDERS[0];
-        showPortalSelector({ name: 'trbo Admin', id: 'trbo_admin' });
-      } else {
-        const lender = LENDERS.find(function(l) { return l.id === lenderId; });
-        if (lender) {
-          currentSession = { role: 'lender', lenderId: lenderId };
-          currentLender = lender;
-          showPortalSelector(lender);
-        }
-      }
-    } catch(e) {
-      console.error('Auto-login failed:', e);
-    }
-  });
-})();();
-
+}
 </script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -4762,6 +4729,25 @@ function showPortalSelector(lender) {
   }
 }
 
+function autoLoginFromNextJS() {
+  const demoId = window.__TRBO_DEMO_ID__;
+  if (!demoId) return;
+
+  if (demoId === 'trbo_admin') {
+    currentSession = { role: 'trbo_admin', lenderId: 'trbo_admin' };
+    currentLender = LENDERS[0];
+    showPortalSelector({ name: 'trbo Admin', id: 'trbo_admin' });
+    return;
+  }
+
+  const lender = LENDERS.find(function (l) { return l.id === demoId; });
+  if (!lender) return;
+
+  currentSession = { role: 'lender', lenderId: demoId };
+  currentLender = lender;
+  showPortalSelector(lender);
+}
+
 // showLanding defined in head
 
 // showTrboAuth defined in head
@@ -4820,6 +4806,7 @@ async function saveBorrowerToDB(scoreResult, formData) {
   if(typeof renderWebhooks === 'function') renderWebhooks();
   if(typeof renderAuditLog === 'function') renderAuditLog(AUDIT_EVENTS);
   if(typeof updatePayloadPreview === 'function') updatePayloadPreview();
+  autoLoginFromNextJS();
 })();
 
 </script>
