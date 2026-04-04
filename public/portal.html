@@ -3752,44 +3752,99 @@ function renderSuperAdmin() {
   const page = document.getElementById('page-super-admin');
   if(!page) return;
 
+  // Show loading state
   page.innerHTML = `
     <div style="margin-bottom:1.5rem;">
       <div class="page-title">All Lenders</div>
       <div class="page-sub">TRBO platform overview — all accounts</div>
     </div>
+    <div id="all-lenders-content"><div style="text-align:center;padding:3rem;color:#94a3b8;">Loading...</div></div>`;
 
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem;">
-      <div style="background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:.75rem;padding:1.25rem;">
-        <div style="font-size:.75rem;color:#64748b;margin-bottom:.3rem;font-weight:500;">Total Lenders</div>
-        <div style="font-size:2rem;font-weight:700;color:#0f172a;">${LENDERS.length}</div>
+  const _sbNow = (typeof _sb !== 'undefined') ? _sb : null;
+  if (!_sbNow) {
+    // Fallback to dummy data
+    renderSuperAdminDummy();
+    return;
+  }
+
+  // Fetch real lenders from Supabase
+  Promise.all([
+    _sbNow.from('lenders').select('*').order('created_at', { ascending: false }),
+    _sbNow.from('borrowers').select('lender_id, status, global_score')
+  ]).then(([lendersRes, borrowersRes]) => {
+    const lenders = lendersRes.data || [];
+    const borrowers = borrowersRes.data || [];
+
+    const totalBorrowers = borrowers.length;
+    const totalLenders = lenders.length;
+
+    const container = document.getElementById('all-lenders-content');
+    if (!container) return;
+
+    container.innerHTML = `
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem;">
+        <div style="background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:.75rem;padding:1.25rem;">
+          <div style="font-size:.75rem;color:#64748b;margin-bottom:.3rem;font-weight:500;">Total Lenders</div>
+          <div style="font-size:2rem;font-weight:700;color:#0f172a;">${totalLenders}</div>
+        </div>
+        <div style="background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:.75rem;padding:1.25rem;">
+          <div style="font-size:.75rem;color:#64748b;margin-bottom:.3rem;font-weight:500;">Total Borrowers</div>
+          <div style="font-size:2rem;font-weight:700;color:#0f172a;">${totalBorrowers}</div>
+        </div>
+        <div style="background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:.75rem;padding:1.25rem;">
+          <div style="font-size:.75rem;color:#64748b;margin-bottom:.3rem;font-weight:500;">Avg Score</div>
+          <div style="font-size:2rem;font-weight:700;color:#0f172a;">${borrowers.filter(b=>b.global_score).length ? Math.round(borrowers.filter(b=>b.global_score).reduce((a,b)=>a+b.global_score,0)/borrowers.filter(b=>b.global_score).length) : '—'}</div>
+        </div>
       </div>
-      <div style="background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:.75rem;padding:1.25rem;">
-        <div style="font-size:.75rem;color:#64748b;margin-bottom:.3rem;font-weight:500;">Total Borrowers</div>
-        <div style="font-size:2rem;font-weight:700;color:#0f172a;">${LENDERS.reduce((a,l)=>a+l.borrowers,0).toLocaleString()}</div>
-      </div>
-      <div style="background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:.75rem;padding:1.25rem;">
-        <div style="font-size:.75rem;color:#64748b;margin-bottom:.3rem;font-weight:500;">Monthly Checks</div>
-        <div style="font-size:2rem;font-weight:700;color:#0f172a;">${LENDERS.reduce((a,l)=>a+l.monthlyChecks,0).toLocaleString()}</div>
-      </div>
+      <div style="display:flex;flex-direction:column;gap:1rem;">
+        ${lenders.length === 0 ? '<div style="text-align:center;padding:3rem;color:#94a3b8;">No lenders yet</div>' :
+          lenders.map(l => {
+            const lb = borrowers.filter(b => b.lender_id === l.id);
+            const approved = lb.filter(b => b.status === 'Ready' || b.status === 'approved').length;
+            const approvalRate = lb.length ? Math.round(approved/lb.length*100) : 0;
+            return `
+            <div style="background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:.75rem;padding:1.25rem;display:flex;align-items:center;gap:1.25rem;">
+              <div style="width:44px;height:44px;border-radius:10px;background:${l.primary_color||'#455c62'};color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.1rem;flex-shrink:0;">${(l.company_name||'?')[0]}</div>
+              <div style="flex:1;">
+                <div style="font-size:1rem;font-weight:600;color:#0f172a;">${l.company_name}</div>
+                <div style="font-size:.75rem;color:#64748b;">${l.plan} · ${l.affiliate_code||'—'}</div>
+              </div>
+              <div style="text-align:center;"><div style="font-size:1.25rem;font-weight:700;color:#0f172a;">${lb.length}</div><div style="font-size:.68rem;color:#64748b;">borrowers</div></div>
+              <div style="text-align:center;"><div style="font-size:1.25rem;font-weight:700;color:#059669;">${approvalRate}%</div><div style="font-size:.68rem;color:#64748b;">approval</div></div>
+              <div style="text-align:center;"><div style="font-size:1rem;font-weight:600;color:#0f172a;">${l.min_score||620}+</div><div style="font-size:.68rem;color:#64748b;">min score</div></div>
+              <span style="font-size:.72rem;padding:.25rem .65rem;border-radius:9999px;background:${l.plan==='enterprise'?'#eff6ff':l.plan==='growth'?'#f0fdf4':'#f8fafc'};color:${l.plan==='enterprise'?'#2563eb':l.plan==='growth'?'#15803d':'#64748b'};font-weight:500;">${l.plan}</span>
+            </div>`;
+          }).join('')}
+      </div>`;
+  }).catch(err => {
+    console.error('All lenders error:', err);
+    renderSuperAdminDummy();
+  });
+}
+
+function renderSuperAdminDummy() {
+  const page = document.getElementById('page-super-admin');
+  if(!page) return;
+  page.innerHTML = `
+    <div style="margin-bottom:1.5rem;">
+      <div class="page-title">All Lenders</div>
+      <div class="page-sub">TRBO platform overview — all accounts</div>
     </div>
-
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem;">
+      ${[['Total Lenders',LENDERS.length],['Total Borrowers',LENDERS.reduce((a,l)=>a+l.borrowers,0).toLocaleString()],['Monthly Checks',LENDERS.reduce((a,l)=>a+l.monthlyChecks,0).toLocaleString()]].map(([l,v])=>`
+        <div style="background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:.75rem;padding:1.25rem;">
+          <div style="font-size:.75rem;color:#64748b;margin-bottom:.3rem;font-weight:500;">${l}</div>
+          <div style="font-size:2rem;font-weight:700;color:#0f172a;">${v}</div>
+        </div>`).join('')}
+    </div>
     <div style="display:flex;flex-direction:column;gap:1rem;">
-      ${LENDERS.map(l => `
+      ${LENDERS.map(l=>`
         <div style="background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:.75rem;padding:1.25rem;display:flex;align-items:center;gap:1.25rem;">
           <div style="width:44px;height:44px;border-radius:10px;background:${l.color};color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.1rem;flex-shrink:0;">${l.logo}</div>
-          <div style="flex:1;">
-            <div style="font-size:1rem;font-weight:600;color:#0f172a;">${l.name}</div>
-            <div style="font-size:.75rem;color:#64748b;">${l.plan} · ${l.users.length} users · ${l.corridors.length} corridors</div>
-          </div>
+          <div style="flex:1;"><div style="font-size:1rem;font-weight:600;color:#0f172a;">${l.name}</div><div style="font-size:.75rem;color:#64748b;">${l.plan} · ${l.users.length} users · ${l.corridors.length} corridors</div></div>
           <div style="text-align:center;"><div style="font-size:1.25rem;font-weight:700;color:#0f172a;">${l.borrowers}</div><div style="font-size:.68rem;color:#64748b;">borrowers</div></div>
           <div style="text-align:center;"><div style="font-size:1.25rem;font-weight:700;color:#059669;">${Math.round(l.approved/l.borrowers*100)}%</div><div style="font-size:.68rem;color:#64748b;">approval</div></div>
-          <div style="text-align:center;"><div style="font-size:1rem;font-weight:600;color:#0f172a;">${l.minScore}+</div><div style="font-size:.68rem;color:#64748b;">min score</div></div>
-          <button onclick="switchLender('${l.id}');showLenderPage('dashboard',document.querySelector('.sidebar-item'))" style="padding:.55rem 1rem;background:#f3f3f5;border:1px solid #e2e8f0;border-radius:.4rem;font-size:.78rem;font-weight:500;cursor:pointer;font-family:Inter,sans-serif;">Switch →</button>
         </div>`).join('')}
-      <div style="background:#fff;border:2px dashed #e2e8f0;border-radius:.75rem;padding:1.5rem;text-align:center;cursor:pointer;" onclick="showToast('Lender onboarding flow — coming in v2')">
-        <div style="font-size:1.5rem;margin-bottom:.4rem;">+</div>
-        <div style="font-size:.875rem;font-weight:500;color:#64748b;">Add New Lender</div>
-      </div>
     </div>`;
 }
 
