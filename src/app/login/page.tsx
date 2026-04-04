@@ -1,6 +1,5 @@
 'use client'
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 
@@ -12,7 +11,6 @@ const DEMOS = [
 ]
 
 export default function LoginPage() {
-  const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -24,7 +22,7 @@ export default function LoginPage() {
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) throw error
-      window.location.href = '/portal.html'
+      window.location.href = '/portal'
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Sign in failed')
       setLoading(false)
@@ -33,7 +31,7 @@ export default function LoginPage() {
 
   function loginAsDemo(id: string) {
     localStorage.setItem('trbo_demo_lender', id)
-    window.location.href = '/portal.html'
+    window.location.href = '/portal'
   }
 
   return (
