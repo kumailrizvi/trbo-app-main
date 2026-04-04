@@ -3164,30 +3164,12 @@ function updateDashboardStats(rows) {
 
 // Open profile from DB row by borrower ID
 async function openProfileFromDB(borrowerId) {
-  try {
-    const { data: b, error } = await _sb.from('borrowers').select('*').eq('id', borrowerId).single();
-    if(error || !b) { showToast('Could not load profile'); return; }
-    
-    // Populate profile view with real data
-    document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
-    const pv = document.getElementById('profile-view');
-    if(pv) pv.style.display = 'block';
-
-    if(document.getElementById('pv-name')) document.getElementById('pv-name').textContent = b.name;
-    if(document.getElementById('pv-corridor')) document.getElementById('pv-corridor').textContent = (b.origin_country||'') + ' → ' + (b.destination_country||'');
-    if(document.getElementById('pv-score')) document.getElementById('pv-score').textContent = b.global_score || '—';
-    if(document.getElementById('pv-breadcrumb')) document.getElementById('pv-breadcrumb').textContent = b.name;
-    if(document.getElementById('pv-risk')) document.getElementById('pv-risk').textContent = (b.risk||'Low') + ' Risk';
-    if(document.getElementById('pv-employer')) document.getElementById('pv-employer').textContent = b.employer || 'Not provided';
-    // Key outputs
-    const limitEl = document.getElementById('prof-credit'); if(limitEl) limitEl.textContent = '$' + (b.suggested_limit||0).toLocaleString();
-    
-    currentProfileBorrowerId = borrowerId;
-    initCharts();
-    updateConverter();
-    setTimeout(renderRequestedDocsBanner, 50);
-    showToast('Loaded profile: ' + b.name);
-  } catch(e) { showToast('Error loading profile'); }
+  // Use viewBorrower which renders a complete real-data profile
+  if (typeof viewBorrower === 'function') {
+    await viewBorrower(borrowerId);
+  } else {
+    showToast('Profile viewer not ready');
+  }
 }
 
 // Track requested docs per borrower
@@ -5964,25 +5946,6 @@ const _origCallClaude = typeof callClaude === 'function' ? callClaude : null;
 if (_origCallClaude) {
   callClaude = async function(system, user) {
     const result = await _origCallClaude(system, user);
-    // If this is a borrower scoring call, save the result
-    if (result && result.global_score && typeof showBorrowerStep === 'function') {
-      const fullname = document.getElementById('b-fullname')?.value || '';
-      const parts = fullname.trim().split(' ');
-      setTimeout(async () => {
-        try {
-          await saveBorrowerToDB(result, {
-            name: fullname || 'Unknown',
-            origin: document.getElementById('b-origin')?.value || '',
-            destination: document.getElementById('b-dest')?.value || '',
-            income: document.getElementById('b-income')?.value || '',
-            savings: document.getElementById('b-savings')?.value || '',
-            remittance: document.getElementById('b-remittance')?.value || '',
-          });
-          renderDashboard();
-          renderBorrowers();
-        } catch(e) { console.error('Auto-save failed:', e); }
-      }, 1000);
-    }
     return result;
   };
 }
