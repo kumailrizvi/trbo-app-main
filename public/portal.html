@@ -1,63 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>
+// Step 1: Hide landing immediately if session exists
+(function(){
+  if(localStorage.getItem('trbo_demo_lender')){
+    document.write('<style>#trbo-landing{display:none!important}</style>');
+  }
+})();
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>trbo Portal</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js">
-// ── AUTO LOGIN FROM NEXT.JS
-(function autoLoginFromNextJS() {
-  const demoId = localStorage.getItem('trbo_demo_lender');
-  if (!demoId) return; // No session — landing shows by default
-
-  // Hide landing immediately via CSS before DOM parses
-  document.write('<style>#trbo-landing{display:none!important}</style>');
-
-  const demoMap = {
-    'lender_koho': 'lender_koho',
-    'lender_borrowell': 'lender_borrowell',
-    'lender_rbc': 'lender_rbc',
-    'trbo_admin': 'trbo_admin',
-  };
-  
-  const lenderId = demoMap[demoId];
-  if (!lenderId) {
-    const l = document.getElementById('trbo-landing');
-    if(l) { l.style.display = 'block'; l.classList.add('active'); }
-    return;
-  }
-  
-  // Wait for all JS to initialise then auto-login
-  setTimeout(function() {
-    try {
-      if (lenderId === 'trbo_admin') {
-        currentSession = { role: 'trbo_admin', lenderId: 'trbo_admin' };
-        currentLender = LENDERS[0];
-        goLender();
-        setTimeout(function() {
-          if(typeof renderSuperAdmin === 'function') renderSuperAdmin();
-          if(typeof showLenderPage === 'function') showLenderPage('super-admin', null);
-          const adminBtn = document.getElementById('sidebar-super-admin-btn');
-          if(adminBtn) adminBtn.style.display = 'flex';
-        }, 100);
-      } else {
-        const lender = LENDERS.find(function(l) { return l.id === lenderId; });
-        if (lender) {
-          currentSession = { role: 'lender', lenderId: lenderId };
-          currentLender = lender;
-          showPortalSelector(lender);
-        }
-      }
-    } catch(e) {
-      console.error('Auto-login failed:', e);
-      // Fallback: show landing
-      const l = document.getElementById('trbo-landing');
-      if(l) { l.style.display = 'block'; l.classList.add('active'); }
-    }
-  }, 300);
-})();
-
-</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
@@ -573,30 +528,6 @@ td { padding: 0.85rem 1rem; font-size: 0.875rem; }
 .modal-doc-check { width:18px;height:18px;border-radius:4px;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:0.7rem;color:transparent;background:transparent; }
 .modal-doc-btn.selected .modal-doc-check { background:var(--gold);border-color:var(--gold);color:var(--dark); }
 </style>
-<script>
-// Early functions needed by landing page HTML onclick handlers
-function showTrboAuth(tab) {
-  document.querySelectorAll('.view').forEach(v => {
-    v.style.display = 'none';
-    v.classList.remove('active');
-  });
-  const auth = document.getElementById('auth-screen');
-  if(auth) { auth.style.display = 'flex'; auth.classList.add('active'); }
-  setTimeout(() => { if(typeof switchAuthTab === 'function') switchAuthTab(tab || 'login'); }, 0);
-}
-function showLanding() {
-  // Redirect to Next.js landing page
-  localStorage.removeItem('trbo_demo_lender');
-  window.location.href = '/';
-  return;
-  document.querySelectorAll('.view').forEach(v => {
-    v.style.display = 'none';
-    v.classList.remove('active');
-  });
-  const l = document.getElementById('trbo-landing');
-  if(l) { l.style.display = 'block'; l.classList.add('active'); }
-}
-</script>
 </head>
 <body>
 
@@ -752,7 +683,7 @@ function showLanding() {
       <button class="tl-nav-link" onclick="document.getElementById('tl-how').scrollIntoView({behavior:'smooth'})">How it works</button>
       <button class="tl-nav-link" onclick="document.getElementById('tl-features').scrollIntoView({behavior:'smooth'})">Features</button>
       <button class="tl-nav-link" onclick="document.getElementById('tl-pricing').scrollIntoView({behavior:'smooth'})">Pricing</button>
-      <button class="tl-nav-link" onclick="localStorage.removeItem('trbo_demo_lender');window.location.href='/login'">Sign in</button>
+      <button class="tl-nav-link" onclick="showTrboAuth('login')">Sign in</button>
       <button class="tl-nav-cta" onclick="showTrboAuth('signup')">Get started free →</button>
     </div>
   </nav>
@@ -767,7 +698,7 @@ function showLanding() {
         Start for free
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
       </button>
-      <button class="tl-btn-secondary" onclick="localStorage.removeItem('trbo_demo_lender');window.location.href='/login'">View demo portal</button>
+      <button class="tl-btn-secondary" onclick="showTrboAuth('login')">View demo portal</button>
     </div>
   </section>
 
@@ -786,7 +717,7 @@ function showLanding() {
         <div class="tl-preview-label">The Lender Portal</div>
         <h2 class="tl-preview-title" style="text-align:left;">Everything your<br>team needs</h2>
         <p class="tl-preview-sub" style="text-align:left;">Approve, review, or decline cross-border borrowers in seconds. See their full financial profile — income, savings, remittance history — all verified by trbo.</p>
-        <button class="tl-btn-primary" onclick="localStorage.removeItem('trbo_demo_lender');window.location.href='/login'">See live demo →</button>
+        <button class="tl-btn-primary" onclick="showTrboAuth('login')">See live demo →</button>
       </div>
       <div class="tl-dash-mock">
         <div class="tl-dash-header">
@@ -965,7 +896,7 @@ function showLanding() {
     <p>Join lenders already using trbo to approve more borrowers, faster.</p>
     <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
       <button class="tl-btn-primary" onclick="showTrboAuth('signup')" style="font-size:1rem;">Start for free →</button>
-      <button class="tl-btn-secondary" onclick="localStorage.removeItem('trbo_demo_lender');window.location.href='/login'" style="font-size:1rem;">View live demo</button>
+      <button class="tl-btn-secondary" onclick="showTrboAuth('login')" style="font-size:1rem;">View live demo</button>
     </div>
   </div>
 
@@ -1778,7 +1709,7 @@ function showLanding() {
             <div class="prog-item" id="prog-passport"><span class="prog-circle"></span> Passport / ID</div>
           </div>
           <div class="bform-card" style="padding:1.25rem;">
-            <div style="font-size:.82rem;font-weight:600;color:#0f172a;margin-bottom:.6rem;">&#129302; How trbo Parsing Works</div>
+            <div style="font-size:.82rem;font-weight:600;color:#0f172a;margin-bottom:.6rem;">&#129302; How AI Parsing Works</div>
             <div style="font-size:.78rem;color:#64748b;line-height:1.7;">
               1. Upload your PDF or photo<br>
               2. trbo reads the document<br>
@@ -2145,29 +2076,29 @@ function renderApiLogs() {
 
 // ── Claude API
 async function callClaude(system, user) {
-  for(let attempt = 0; attempt < 3; attempt++) {
+  for (let attempt = 0; attempt < 3; attempt++) {
     try {
-      const r = await fetch("/api/score", {
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
+      const r = await fetch('/api/score', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt: user, system: system })
       });
-      if(r.status === 429) {
-        const secs = (attempt+1)*4;
-        if(typeof showToast==='function') showToast('Rate limited — retrying in '+secs+'s...');
-        await new Promise(res=>setTimeout(res, secs*1000));
+      if (r.status === 429) {
+        const secs = (attempt + 1) * 5;
+        if (typeof showToast === 'function') showToast('Rate limited — retrying in ' + secs + 's...');
+        await new Promise(res => setTimeout(res, secs * 1000));
         continue;
       }
-      if(!r.ok) throw new Error("API error " + r.status);
+      if (!r.ok) throw new Error('API error ' + r.status);
       const data = await r.json();
-      if(data.error) throw new Error(data.error);
+      if (data.error) throw new Error(data.error);
       return data;
-    } catch(err) {
-      if(attempt === 2) throw err;
-      await new Promise(res=>setTimeout(res, 2000));
+    } catch (err) {
+      if (attempt === 2) throw err;
+      await new Promise(res => setTimeout(res, 2000));
     }
   }
-  throw new Error("Rate limit — please wait 30s and try again");
+  throw new Error('Failed after retries');
 }
 
 // ── Loading step animation
@@ -2416,21 +2347,17 @@ async function runBorrowerCheck() {
       const user = `Borrower: ${first} ${last}\nFrom: ${origin} → Now in: ${dest}\nIncome: $${income}/mo, ${tenure} yrs employed\nSavings: $${savings}/mo, Remittances: $${remittance}/mo\nCredit history: ${bureau}`;
       const r = await callClaude(system, user);
       renderBorrowerResult(r, first, last, origin, dest);
-      // Save to Supabase
+      // Save real borrower to Supabase
       try {
         await saveBorrowerToDB(r, {
           name: first + ' ' + last,
-          email: (document.getElementById('b-email') || {value:''}).value || null,
           origin_country: origin,
           destination_country: dest,
           income_usd: parseFloat(income) || null,
           savings_usd: parseFloat(savings) || null,
           remittance_usd: parseFloat(remittance) || null,
-          tenure_months: parseFloat(tenure) * 12 || null,
         });
-      } catch(saveErr) {
-        console.error('Save to DB failed:', saveErr);
-      }
+      } catch(dbErr) { console.error('DB save:', dbErr); }
     } catch(e) {
       showBorrowerStep('b-upload');
       alert('Error generating profile: ' + e.message + '\n\nPlease try again.');
@@ -3228,7 +3155,7 @@ function updateDashboardStats(rows) {
 // Open profile from DB row by borrower ID
 async function openProfileFromDB(borrowerId) {
   try {
-    const { data: b, error } = await _sb.from('borrowers').select('*').eq('id', borrowerId).single();
+    const { data: b, error } = await supabase.from('borrowers').select('*').eq('id', borrowerId).single();
     if(error || !b) { showToast('Could not load profile'); return; }
     
     // Populate profile view with real data
@@ -3311,8 +3238,12 @@ async function handleDocUpload(input, docType) {
     });
 
     if (!resp.ok) throw new Error('API ' + resp.status);
-    const data = await resp.json();
-    const txt = JSON.stringify(data);
+    const _pd = await resp.json();
+    const txt = JSON.stringify(_pd);
+
+    if (!resp.ok) throw new Error('API ' + resp.status);
+    const _r = await resp.json();
+    const txt = JSON.stringify(_r);
     const parsed = JSON.parse(txt);
     parsedDocData[docType] = parsed;
 
@@ -3863,22 +3794,6 @@ function renderSuperAdmin() {
 
 
 
-
-// ═══════════════════════════════════════
-// SUPABASE CONFIG
-// ═══════════════════════════════════════
-const SUPABASE_URL = 'https://hxylhisadsavizmsiazj.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh4eWxoaXNhZHNhdml6bXNpYXpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMjg0NzAsImV4cCI6MjA5MDgwNDQ3MH0.87X_uQJEBKQYEGodsKHFj6sBBn2BWs9HCDEszPl1zcw';
-const _sb = (typeof window !== 'undefined' && window.supabase && window.supabase.createClient)
-  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-  : null;
-
-const DEMO_LENDER_IDS = {
-  lender_koho:      '11111111-1111-1111-1111-111111111111',
-  lender_borrowell: '22222222-2222-2222-2222-222222222222',
-  lender_rbc:       '33333333-3333-3333-3333-333333333333',
-};
-
 // ═══════════════════════════════════════════════════
 // TRBO v4 NEW FEATURES
 // ═══════════════════════════════════════════════════
@@ -3915,7 +3830,7 @@ renderBorrowers = async function() {
   if(SUPABASE_URL !== 'YOUR_SUPABASE_URL' && currentLender?.id) {
     try {
       const lenderId = DEMO_LENDER_IDS[currentLender.id] || currentLender.id;
-      const { data: rows, error } = await _sb.from('borrowers').select('*').eq('lender_id', lenderId).order('created_at', { ascending: false });
+      const { data: rows, error } = await supabase.from('borrowers').select('*').eq('lender_id', lenderId).order('created_at', { ascending: false });
       if(!error && rows && rows.length > 0) {
         renderBorrowerRowsFromDB(rows);
         updateDashboardStats(rows);
@@ -4602,12 +4517,11 @@ async function validateDocType(file, expectedType) {
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ messages: [
         {type: isImg ? 'image' : 'document', source:{type:'base64', media_type: isImg ? file.type : 'application/pdf', data:base64}},
-        {type:'text', text:'What type of financial document is this? Reply ONLY with JSON: {"type":"bank_statement","confidence":"high"}. Types: bank_statement, payslip, remittance, id_passport, unknown.'}
+        {type:'text', text:'Classify this document type. Reply ONLY with JSON: {"type":"bank_statement","confidence":"high"}. Types: bank_statement, payslip, remittance, id_passport, unknown.'}
       ]})
     });
     if(!resp.ok) return {valid:true};
     const result = await resp.json();
-    const txt = JSON.stringify(result);
     const expected = typeMap[expectedType] || expectedType;
     if(result.confidence === 'high' && result.type !== 'unknown' && result.type !== expected) {
       return {
@@ -4650,11 +4564,11 @@ async function handleLogin() {
   }
 
   try {
-    const { data, error } = await _sb.auth.signInWithPassword({ email, password: pass });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
     if(error) throw error;
 
     // Get user's lender
-    const { data: userData } = await _sb.from('users').select('*, lenders(*)').eq('id', data.user.id).single();
+    const { data: userData } = await supabase.from('users').select('*, lenders(*)').eq('id', data.user.id).single();
     if(userData?.lenders) {
       currentLender = {
         id: userData.lenders.id,
@@ -4708,12 +4622,12 @@ async function handleSignup() {
 
   try {
     // Create Supabase auth user
-    const { data, error } = await _sb.auth.signUp({ email, password: pass });
+    const { data, error } = await supabase.auth.signUp({ email, password: pass });
     if(error) throw error;
 
     // Create lender record
     const affiliateCode = company.toLowerCase().replace(/\s+/g,'_') + '_' + Date.now().toString(36);
-    const { data: lenderData, error: lenderErr } = await _sb.from('lenders').insert({
+    const { data: lenderData, error: lenderErr } = await supabase.from('lenders').insert({
       company_name: company,
       plan: 'starter',
       affiliate_code: affiliateCode,
@@ -4722,7 +4636,7 @@ async function handleSignup() {
     if(lenderErr) throw lenderErr;
 
     // Create user record
-    await _sb.from('users').insert({
+    await supabase.from('users').insert({
       id: data.user.id,
       email,
       name: (name + ' ' + lastName).trim() || email,
@@ -4776,27 +4690,42 @@ function showPortalSelector(lender) {
   }
 }
 
-// showLanding defined in head
+function showLanding() { localStorage.removeItem('trbo_demo_lender'); window.location.href = '/'; return;
+  document.querySelectorAll('.view').forEach(v => {
+    v.style.display = 'none';
+    v.classList.remove('active');
+  });
+  const landing = document.getElementById('trbo-landing');
+  if(landing) { landing.style.display = 'block'; landing.classList.add('active'); }
+}
 
-// showTrboAuth defined in head
+function showTrboAuth(tab) {
+  document.querySelectorAll('.view').forEach(v => {
+    v.style.display = 'none';
+    v.classList.remove('active');
+  });
+  const auth = document.getElementById('auth-screen');
+  if(auth) { auth.style.display = 'flex'; auth.classList.add('active'); }
+  if(typeof switchAuthTab === 'function') switchAuthTab(tab || 'login');
+}
 
 
 
 // ── SAVE REAL BORROWER TO SUPABASE
 async function saveBorrowerToDB(scoreResult, formData) {
-  if(!_sb || SUPABASE_URL === 'YOUR_SUPABASE_URL') return null;
+  if(!supabase || SUPABASE_URL === 'YOUR_SUPABASE_URL') return null;
   try {
     const lenderId = currentLender?.id ? (DEMO_LENDER_IDS[currentLender.id] || currentLender.id) : null;
-    const { data, error } = await _sb.from('borrowers').insert({
+    const { data, error } = await supabase.from('borrowers').insert({
       lender_id: lenderId,
       name: formData.name || 'Unknown',
       email: formData.email || null,
-      origin_country: formData.origin_country || formData.origin || '',
-      destination_country: formData.destination_country || formData.destination || '',
+      origin_country: formData.origin || '',
+      destination_country: formData.destination || '',
       status: 'Ready',
       global_score: scoreResult.global_score || scoreResult.score || 0,
-      risk: (scoreResult.risk_tier === 'Prime' || scoreResult.risk_tier === 'Near-Prime' || scoreResult.score_band === 'Excellent' || scoreResult.score_band === 'Very Good') ? 'Low' : (scoreResult.risk_tier === 'Subprime' || scoreResult.score_band === 'Good') ? 'Medium' : 'High',
-      risk_tier: scoreResult.risk_tier || scoreResult.score_band || '',
+      risk: scoreResult.risk_tier === 'Prime' || scoreResult.risk_tier === 'Near-Prime' ? 'Low' : scoreResult.risk_tier === 'Subprime' ? 'Medium' : 'High',
+      risk_tier: scoreResult.risk_tier || '',
       income_usd: parseFloat(formData.income) || null,
       savings_usd: parseFloat(formData.savings) || null,
       remittance_usd: parseFloat(formData.remittance) || null,
@@ -5670,4 +5599,26 @@ async function saveBorrowerToDB(scoreResult, formData) {
   </div>
 </div>
 
+<script>
+// Step 2: After all JS loaded, show portal selector
+(function(){
+  var demoId = localStorage.getItem('trbo_demo_lender');
+  if (!demoId) return;
+  var demoMap = {'lender_koho':'lender_koho','lender_borrowell':'lender_borrowell','lender_rbc':'lender_rbc','trbo_admin':'trbo_admin'};
+  var lenderId = demoMap[demoId];
+  if (!lenderId) return;
+  if (lenderId === 'trbo_admin') {
+    currentSession = {role:'trbo_admin',lenderId:'trbo_admin'};
+    currentLender = LENDERS[0];
+    showPortalSelector({name:'trbo Admin',id:'trbo_admin'});
+  } else {
+    var lender = LENDERS.find(function(l){return l.id===lenderId;});
+    if (lender) {
+      currentSession = {role:'lender',lenderId:lenderId};
+      currentLender = lender;
+      showPortalSelector(lender);
+    }
+  }
+})();
+</script>
 </body>
