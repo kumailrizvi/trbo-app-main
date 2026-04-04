@@ -1178,7 +1178,7 @@ td { padding: 0.85rem 1rem; font-size: 0.875rem; }
       </div>
     </div>
 
- Check -->
+    <!-- ── RUN CHECK -->
     <div id="page-run-check" class="lender-page">
       <div class="page-title">Run Credit Check</div>
       <div class="page-sub">Initiate a new AI-powered cross-border credit analysis</div>
@@ -2502,6 +2502,28 @@ function resetBorrower() { showBorrowerStep('b-welcome'); }
 
 
 function openProfileFromRow(btn) {
+  const row = btn.closest('tr');
+  const cells = row ? row.querySelectorAll('td') : [];
+  const name = cells[0] ? cells[0].textContent.replace(/\+docs/,'').trim() : '';
+  
+  // Try to find real DB borrower first
+  const _sbNow = (typeof _sb !== 'undefined') ? _sb : null;
+  if (_sbNow && name) {
+    const lenderId = currentLender && DEMO_LENDER_IDS ? (DEMO_LENDER_IDS[currentLender.id] || currentLender.id) : null;
+    _sbNow.from('borrowers').select('id').eq('name', name).eq('is_demo', false)
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          openProfileFromDB(data[0].id);
+        } else {
+          // Fallback to old static profile
+          openProfileFromRowLegacy(btn);
+        }
+      }).catch(() => openProfileFromRowLegacy(btn));
+    return;
+  }
+  openProfileFromRowLegacy(btn);
+}
+function openProfileFromRowLegacy(btn) {
   const row = btn.closest('tr');
   const cells = row.querySelectorAll('td');
   const name = cells[0] ? cells[0].textContent.replace(/\+docs/,'').trim() : 'Mohammed Al-Rahman';
