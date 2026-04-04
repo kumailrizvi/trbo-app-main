@@ -2416,6 +2416,21 @@ async function runBorrowerCheck() {
       const user = `Borrower: ${first} ${last}\nFrom: ${origin} → Now in: ${dest}\nIncome: $${income}/mo, ${tenure} yrs employed\nSavings: $${savings}/mo, Remittances: $${remittance}/mo\nCredit history: ${bureau}`;
       const r = await callClaude(system, user);
       renderBorrowerResult(r, first, last, origin, dest);
+      // Save to Supabase
+      try {
+        await saveBorrowerToDB(r, {
+          name: first + ' ' + last,
+          email: (document.getElementById('b-email') || {value:''}).value || null,
+          origin_country: origin,
+          destination_country: dest,
+          income_usd: parseFloat(income) || null,
+          savings_usd: parseFloat(savings) || null,
+          remittance_usd: parseFloat(remittance) || null,
+          tenure_months: parseFloat(tenure) * 12 || null,
+        });
+      } catch(saveErr) {
+        console.error('Save to DB failed:', saveErr);
+      }
     } catch(e) {
       showBorrowerStep('b-upload');
       alert('Error generating profile: ' + e.message + '\n\nPlease try again.');
@@ -4776,12 +4791,12 @@ async function saveBorrowerToDB(scoreResult, formData) {
       lender_id: lenderId,
       name: formData.name || 'Unknown',
       email: formData.email || null,
-      origin_country: formData.origin || '',
-      destination_country: formData.destination || '',
+      origin_country: formData.origin_country || formData.origin || '',
+      destination_country: formData.destination_country || formData.destination || '',
       status: 'Ready',
       global_score: scoreResult.global_score || scoreResult.score || 0,
-      risk: scoreResult.risk_tier === 'Prime' || scoreResult.risk_tier === 'Near-Prime' ? 'Low' : scoreResult.risk_tier === 'Subprime' ? 'Medium' : 'High',
-      risk_tier: scoreResult.risk_tier || '',
+      risk: (scoreResult.risk_tier === 'Prime' || scoreResult.risk_tier === 'Near-Prime' || scoreResult.score_band === 'Excellent' || scoreResult.score_band === 'Very Good') ? 'Low' : (scoreResult.risk_tier === 'Subprime' || scoreResult.score_band === 'Good') ? 'Medium' : 'High',
+      risk_tier: scoreResult.risk_tier || scoreResult.score_band || '',
       income_usd: parseFloat(formData.income) || null,
       savings_usd: parseFloat(formData.savings) || null,
       remittance_usd: parseFloat(formData.remittance) || null,
