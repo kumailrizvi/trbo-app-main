@@ -3261,156 +3261,70 @@ async function openProfileFromDB(borrowerId) {
     const { data: b, error } = await _sbNow.from('borrowers').select('*').eq('id', borrowerId).single();
     if (error || !b) { showToast('Could not load profile'); return; }
 
-    // Hide all views and lender pages
+    // Show the original rich profile-view
     document.querySelectorAll('.view').forEach(v => { v.style.display = 'none'; v.classList.remove('active'); });
     document.querySelectorAll('.lender-page').forEach(p => p.style.display = 'none');
-
-    // Build score color
-    const sc = b.global_score || 0;
-    const scoreColor = sc >= 750 ? '#059669' : sc >= 650 ? '#2563eb' : '#d97706';
-    const riskBg = b.risk === 'Low' ? 'rgba(5,150,105,0.12)' : b.risk === 'High' ? 'rgba(220,38,38,0.12)' : 'rgba(217,119,6,0.12)';
-    const riskColor = b.risk === 'Low' ? '#059669' : b.risk === 'High' ? '#dc2626' : '#d97706';
-
-    // Use profile-view container but replace its content
     const pv = document.getElementById('profile-view');
-    if (!pv) return;
-    pv.style.display = 'block';
+    if (pv) { pv.style.display = 'block'; }
 
-    pv.innerHTML = `
-      <!-- Top bar -->
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:1rem 2rem;background:#fff;border-bottom:1px solid rgba(0,0,0,0.08);position:sticky;top:0;z-index:10;">
-        <div style="display:flex;align-items:center;gap:1rem;">
-          <button onclick="backToBorrowers()" style="display:flex;align-items:center;gap:0.4rem;background:none;border:1px solid #e2e8f0;border-radius:.5rem;padding:.45rem .85rem;color:#64748b;font-size:.82rem;cursor:pointer;font-family:inherit;">← Back</button>
-          <span style="font-size:.82rem;color:#64748b;">Borrowers / <span style="color:#0f172a;">${b.name}</span></span>
-        </div>
-        <div style="font-family:'Segoe UI',Georgia,serif;font-size:1.4rem;font-weight:400;color:#455c62;">trbo. <span style="font-size:.55rem;letter-spacing:.2em;vertical-align:middle;color:#9aadaf;">FINANCIAL</span></div>
-      </div>
+    // Update key fields with real data
+    const set = (id, val) => { const el = document.getElementById(id); if (el && val !== null && val !== undefined) el.textContent = val; };
 
-      <!-- Header -->
-      <div style="background:#fff;border-bottom:1px solid rgba(0,0,0,0.08);padding:2rem 2.5rem;">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;max-width:1200px;margin:0 auto;">
-          <div>
-            <div style="font-size:2rem;font-weight:600;color:#0f172a;margin-bottom:.5rem;">${b.name}</div>
-            <div style="font-size:1.05rem;color:#64748b;">${b.origin_country || '—'} → ${b.destination_country || '—'}</div>
-            ${b.email ? `<div style="font-size:.85rem;color:#94a3b8;margin-top:.3rem;">${b.email}</div>` : ''}
-          </div>
-          <div style="text-align:center;">
-            <div style="font-size:.78rem;color:#64748b;margin-bottom:.4rem;">Global Credit Score</div>
-            <div style="font-size:4rem;font-weight:700;color:${scoreColor};line-height:1;margin-bottom:.6rem;">${b.global_score || '—'}</div>
-            <div style="display:flex;gap:.5rem;justify-content:center;">
-              <span style="background:${riskBg};color:${riskColor};font-size:.8rem;padding:.35rem 1rem;border-radius:9999px;font-weight:500;">${b.risk || 'Medium'} Risk</span>
-              <span style="background:rgba(5,150,105,0.1);color:#059669;font-size:.8rem;padding:.35rem 1rem;border-radius:9999px;">${b.status || 'Ready'}</span>
-            </div>
-          </div>
-        </div>
-      </div>
+    set('pv-name', b.name);
+    set('pv-breadcrumb', b.name);
+    set('pv-corridor', (b.origin_country || '') + ' → ' + (b.destination_country || ''));
 
-      <!-- Body -->
-      <div style="max-width:1200px;margin:0 auto;padding:2rem 2.5rem;display:flex;gap:1.5rem;align-items:flex-start;">
+    // Score with color
+    const scoreEl = document.getElementById('pv-score');
+    if (scoreEl) {
+      scoreEl.textContent = b.global_score || '—';
+      const sc = b.global_score || 0;
+      scoreEl.style.color = sc >= 750 ? '#059669' : sc >= 650 ? '#2563eb' : '#d97706';
+    }
 
-        <!-- Left -->
-        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1.25rem;">
+    // Risk badge
+    const riskEl = document.getElementById('pv-risk');
+    if (riskEl) {
+      riskEl.textContent = (b.risk || 'Medium') + ' Risk';
+      riskEl.style.background = b.risk === 'Low' ? 'rgba(76,175,122,0.15)' : b.risk === 'High' ? 'rgba(220,38,38,0.15)' : 'rgba(217,119,6,0.15)';
+      riskEl.style.color = b.risk === 'Low' ? '#059669' : b.risk === 'High' ? '#dc2626' : '#d97706';
+    }
 
-          ${b.analyst_narrative ? `
-          <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:.75rem;padding:1.25rem;">
-            <div style="font-size:.75rem;font-weight:600;color:#15803d;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.5rem;">✓ trbo Analyst Summary</div>
-            <div style="font-size:.875rem;color:#0f172a;line-height:1.7;font-style:italic;">"${b.analyst_narrative}"</div>
-          </div>` : ''}
+    // Key outputs
+    set('prof-credit', b.suggested_limit ? '$' + b.suggested_limit.toLocaleString() : '$—');
+    set('prof-apr', b.suggested_apr_low && b.suggested_apr_high ? b.suggested_apr_low + '% – ' + b.suggested_apr_high + '%' : '—');
 
-          <!-- Financial Summary -->
-          <div style="background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:.75rem;padding:1.5rem;">
-            <div style="font-size:1rem;font-weight:600;color:#0f172a;margin-bottom:1.25rem;">$ Income & Employment</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
-              <div>
-                <div style="font-size:.78rem;color:#64748b;margin-bottom:.3rem;">Monthly Income</div>
-                <div style="font-size:1.5rem;font-weight:700;color:#0f172a;">${b.income_usd ? '$' + b.income_usd.toLocaleString() + '/mo' : '—'}</div>
-              </div>
-              <div>
-                <div style="font-size:.78rem;color:#64748b;margin-bottom:.3rem;">Monthly Savings</div>
-                <div style="font-size:1.5rem;font-weight:700;color:#0f172a;">${b.savings_usd ? '$' + b.savings_usd.toLocaleString() + '/mo' : '—'}</div>
-              </div>
-              <div>
-                <div style="font-size:.78rem;color:#64748b;margin-bottom:.3rem;">Employer</div>
-                <div style="font-size:1rem;font-weight:500;color:#0f172a;">${b.employer || 'Not provided'}</div>
-              </div>
-              <div>
-                <div style="font-size:.78rem;color:#64748b;margin-bottom:.3rem;">Employment Type</div>
-                <div style="font-size:1rem;font-weight:500;color:#0f172a;">${b.employment_type || '—'}</div>
-              </div>
-              ${b.tenure_months ? `<div>
-                <div style="font-size:.78rem;color:#64748b;margin-bottom:.3rem;">Tenure</div>
-                <div style="font-size:1rem;font-weight:500;color:#0f172a;">${b.tenure_months} months</div>
-              </div>` : ''}
-              ${b.remittance_usd ? `<div>
-                <div style="font-size:.78rem;color:#64748b;margin-bottom:.3rem;">Monthly Remittances</div>
-                <div style="font-size:1.5rem;font-weight:700;color:#2563eb;">$${b.remittance_usd.toLocaleString()}/mo</div>
-              </div>` : ''}
-            </div>
-          </div>
+    // Income & employer fields
+    set('pv-employer', b.employer || 'Not provided');
+    if (b.income_usd) {
+      const incEl = document.getElementById('pv-monthly-income');
+      if (incEl) incEl.textContent = '$' + b.income_usd.toLocaleString() + '/mo';
+    }
 
-          ${(b.key_strengths && b.key_strengths.length) || (b.key_risks && b.key_risks.length) ? `
-          <div style="background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:.75rem;padding:1.5rem;">
-            <div style="font-size:1rem;font-weight:600;color:#0f172a;margin-bottom:1.25rem;">Credit Factors</div>
-            ${b.key_strengths && b.key_strengths.length ? `
-            <div style="margin-bottom:1rem;">
-              <div style="font-size:.75rem;font-weight:600;color:#15803d;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.6rem;">Strengths</div>
-              ${b.key_strengths.map(s => `<div style="display:flex;gap:.5rem;margin-bottom:.5rem;font-size:.875rem;color:#0f172a;"><span style="color:#059669;flex-shrink:0;">✓</span>${s}</div>`).join('')}
-            </div>` : ''}
-            ${b.key_risks && b.key_risks.length ? `
-            <div>
-              <div style="font-size:.75rem;font-weight:600;color:#a16207;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.6rem;">Considerations</div>
-              ${b.key_risks.map(r => `<div style="display:flex;gap:.5rem;margin-bottom:.5rem;font-size:.875rem;color:#0f172a;"><span style="color:#d97706;flex-shrink:0;">⚠</span>${r}</div>`).join('')}
-            </div>` : ''}
-          </div>` : ''}
-
-        </div>
-
-        <!-- Right sidebar -->
-        <div style="width:300px;flex-shrink:0;display:flex;flex-direction:column;gap:1.25rem;">
-
-          <!-- Decision -->
-          <div style="background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:.75rem;padding:1.25rem;">
-            <div style="font-size:.85rem;font-weight:600;color:#0f172a;margin-bottom:1rem;">Decision</div>
-            <button onclick="updateBorrowerStatus('${b.id}','approved')" style="width:100%;padding:.75rem;background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0;border-radius:.5rem;cursor:pointer;font-weight:600;font-size:.875rem;font-family:inherit;margin-bottom:.5rem;">✓ Approve</button>
-            <button onclick="updateBorrowerStatus('${b.id}','Under Review')" style="width:100%;padding:.75rem;background:#fffbeb;color:#a16207;border:1px solid #fde68a;border-radius:.5rem;cursor:pointer;font-weight:600;font-size:.875rem;font-family:inherit;margin-bottom:.5rem;">⟳ Request Review</button>
-            <button onclick="updateBorrowerStatus('${b.id}','declined')" style="width:100%;padding:.75rem;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:.5rem;cursor:pointer;font-weight:600;font-size:.875rem;font-family:inherit;">✗ Decline</button>
-          </div>
-
-          <!-- Key Outputs -->
-          <div style="background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:.75rem;padding:1.25rem;">
-            <div style="font-size:.85rem;font-weight:600;color:#0f172a;margin-bottom:1rem;">Key Outputs</div>
-            <div style="margin-bottom:.85rem;">
-              <div style="font-size:.72rem;color:#64748b;margin-bottom:.2rem;">Suggested Credit Limit</div>
-              <div style="font-size:1.75rem;font-weight:700;color:#0f172a;">${b.suggested_limit ? '$' + b.suggested_limit.toLocaleString() : '—'}</div>
-            </div>
-            <div style="margin-bottom:.85rem;">
-              <div style="font-size:.72rem;color:#64748b;margin-bottom:.2rem;">Suggested APR Band</div>
-              <div style="font-size:1.25rem;font-weight:600;color:#0f172a;">${b.suggested_apr_low && b.suggested_apr_high ? b.suggested_apr_low + '% – ' + b.suggested_apr_high + '%' : '—'}</div>
-            </div>
-            ${b.confidence ? `<div>
-              <div style="font-size:.72rem;color:#64748b;margin-bottom:.2rem;">Confidence Score</div>
-              <div style="font-size:1.25rem;font-weight:600;color:#0f172a;">${b.confidence}%</div>
-            </div>` : ''}
-          </div>
-
-          <!-- Submitted info -->
-          <div style="background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:.75rem;padding:1.25rem;">
-            <div style="font-size:.85rem;font-weight:600;color:#0f172a;margin-bottom:1rem;">Details</div>
-            ${[
-              ['Submitted', b.created_at ? new Date(b.created_at).toLocaleDateString('en-CA') : null],
-              ['Risk Tier', b.risk_tier],
-              ['Status', b.status],
-            ].filter(([,v]) => v).map(([l,v]) => `
-              <div style="display:flex;justify-content:space-between;padding:.5rem 0;border-bottom:1px solid #f8fafc;font-size:.82rem;">
-                <span style="color:#64748b;">${l}</span>
-                <span style="color:#0f172a;font-weight:500;">${v}</span>
-              </div>`).join('')}
-          </div>
-        </div>
-      </div>
-    `;
+    // Inject analyst narrative at top if available
+    if (b.analyst_narrative) {
+      let narEl = document.getElementById('pv-real-narrative');
+      if (!narEl) {
+        narEl = document.createElement('div');
+        narEl.id = 'pv-real-narrative';
+        narEl.style.cssText = 'margin:1.25rem 2.5rem 0;padding:1rem 1.25rem;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:.75rem;font-size:.85rem;color:#0f172a;line-height:1.6;';
+        // Insert after the header
+        const header = pv.querySelector('[style*="border-bottom:1px solid var(--border)"]') || pv.querySelector('[style*="padding:2rem 2.5rem"]');
+        if (header && header.nextSibling) {
+          header.parentNode.insertBefore(narEl, header.nextSibling);
+        } else if (pv.children[1]) {
+          pv.insertBefore(narEl, pv.children[2]);
+        }
+      }
+      narEl.innerHTML = '<span style="font-size:.7rem;font-weight:600;color:#15803d;text-transform:uppercase;letter-spacing:.05em;">✓ trbo Analysis</span><br><em>"' + b.analyst_narrative + '"</em>';
+    }
 
     currentProfileBorrowerId = borrowerId;
+    setTimeout(() => { 
+      try { if(typeof initCharts==='function') initCharts(); } catch(e){}
+      try { if(typeof updateConverter==='function') updateConverter(); } catch(e){}
+      try { if(typeof renderRequestedDocsBanner==='function') renderRequestedDocsBanner(); } catch(e){}
+    }, 150);
     showToast('Loaded profile: ' + b.name);
   } catch(e) {
     console.error('openProfileFromDB error:', e);
