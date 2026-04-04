@@ -8,20 +8,32 @@
 // ── AUTO LOGIN FROM NEXT.JS
 (function autoLoginFromNextJS() {
   const demoId = localStorage.getItem('trbo_demo_lender');
-  if (!demoId) return; // No demo session, show landing normally
   
-  // Map demo ID to lender
+  if (!demoId) {
+    // No session — show landing page
+    const l = document.getElementById('trbo-landing');
+    if(l) { l.style.display = 'block'; l.classList.add('active'); }
+    return;
+  }
+  
+  // Has session — show loading spinner while JS initialises
+  document.body.style.background = '#f8fafc';
+
   const demoMap = {
     'lender_koho': 'lender_koho',
-    'lender_borrowell': 'lender_borrowell', 
+    'lender_borrowell': 'lender_borrowell',
     'lender_rbc': 'lender_rbc',
     'trbo_admin': 'trbo_admin',
   };
   
   const lenderId = demoMap[demoId];
-  if (!lenderId) return;
+  if (!lenderId) {
+    const l = document.getElementById('trbo-landing');
+    if(l) { l.style.display = 'block'; l.classList.add('active'); }
+    return;
+  }
   
-  // Wait for DOM and all JS to be ready
+  // Wait for all JS to initialise then auto-login
   setTimeout(function() {
     try {
       if (lenderId === 'trbo_admin') {
@@ -44,8 +56,11 @@
       }
     } catch(e) {
       console.error('Auto-login failed:', e);
+      // Fallback: show landing
+      const l = document.getElementById('trbo-landing');
+      if(l) { l.style.display = 'block'; l.classList.add('active'); }
     }
-  }, 200);
+  }, 300);
 })();
 
 </script>
@@ -593,7 +608,7 @@ function showLanding() {
 
 <!-- ══════════════════════════════════════ LANDING -->
 <!-- ══════ trbo LANDING PAGE ══════ -->
-<div id="trbo-landing" class="view active" style="display:block;min-height:100vh;background:#0d1117;font-family:'DM Sans',sans-serif;overflow-x:hidden;">
+<div id="trbo-landing" class="view" style="display:none;min-height:100vh;background:#0d1117;font-family:'DM Sans',sans-serif;overflow-x:hidden;">
 
   <!-- Fonts -->
   <style>
