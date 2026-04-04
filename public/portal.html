@@ -2361,11 +2361,15 @@ async function runBorrowerCheck() {
       try {
         await saveBorrowerToDB(r, {
           name: first + ' ' + last,
-          origin_country: origin,
-          destination_country: dest,
-          income_usd: parseFloat(income) || null,
-          savings_usd: parseFloat(savings) || null,
-          remittance_usd: parseFloat(remittance) || null,
+          origin: origin,
+          destination: dest,
+          income: income,
+          savings: savings,
+          remittance: remittance,
+          email: (document.getElementById('b-email') || {value:''}).value || null,
+          employer: (document.getElementById('b-employer') || {value:''}).value || null,
+          empType: (document.getElementById('b-emptype') || {value:''}).value || 'Full-time',
+          tenure: (document.getElementById('b-tenure') || {value:'0'}).value || '0',
         });
       } catch(dbErr) { console.error('DB save:', dbErr); }
     } catch(e) {
@@ -3170,57 +3174,88 @@ async function openProfileFromDB(borrowerId) {
     const { data: b, error } = await _sbNow.from('borrowers').select('*').eq('id', borrowerId).single();
     if (error || !b) { showToast('Could not load profile'); return; }
 
-    // Show the profile-view (original rich HTML)
+    // Show original profile-view HTML
     document.querySelectorAll('.view').forEach(v => { v.style.display = 'none'; v.classList.remove('active'); });
-    // Also hide lender pages
     document.querySelectorAll('.lender-page').forEach(p => p.style.display = 'none');
     const pv = document.getElementById('profile-view');
     if (pv) { pv.style.display = 'block'; }
 
-    // Populate fields with real data
-    const set = (id, val) => { const el = document.getElementById(id); if (el && val) el.textContent = val; };
+    const set = (id, val) => { const el = document.getElementById(id); if (el && val !== null && val !== undefined) el.textContent = val; };
+    const setHTML = (id, val) => { const el = document.getElementById(id); if (el && val) el.innerHTML = val; };
+
+    // Basic info
     set('pv-name', b.name);
     set('pv-breadcrumb', b.name);
     set('pv-corridor', (b.origin_country || '') + ' → ' + (b.destination_country || ''));
-    set('pv-score', b.global_score || '—');
-    set('pv-risk', (b.risk || 'Low') + ' Risk');
-    set('pv-employer', b.employer || 'Not provided');
 
-    // Score color
+    // Score with color
     const scoreEl = document.getElementById('pv-score');
     if (scoreEl) {
+      scoreEl.textContent = b.global_score || '—';
       const sc = b.global_score || 0;
       scoreEl.style.color = sc >= 750 ? '#059669' : sc >= 650 ? '#2563eb' : '#d97706';
     }
 
-    // Key outputs
-    const setProf = (id, val) => { const el = document.getElementById(id); if (el && val) el.textContent = val; };
-    setProf('prof-credit', b.suggested_limit ? '$' + b.suggested_limit.toLocaleString() : '—');
-    setProf('prof-apr', b.suggested_apr_low && b.suggested_apr_high ? b.suggested_apr_low + '% – ' + b.suggested_apr_high + '%' : '—');
-
-    // Income section
-    if (b.income_usd) {
-      const incomeEls = pv ? pv.querySelectorAll('[data-field="income"]') : [];
-      incomeEls.forEach(el => el.textContent = '$' + b.income_usd.toLocaleString() + '/mo');
+    // Risk badge
+    const riskEl = document.getElementById('pv-risk');
+    if (riskEl) {
+      riskEl.textContent = (b.risk || 'Medium') + ' Risk';
+      riskEl.style.background = b.risk === 'Low' ? 'rgba(76,175,122,0.15)' : b.risk === 'High' ? 'rgba(220,38,38,0.15)' : 'rgba(217,119,6,0.15)';
+      riskEl.style.color = b.risk === 'Low' ? '#059669' : b.risk === 'High' ? '#dc2626' : '#d97706';
     }
 
-    // Analyst narrative
-    if (b.analyst_narrative) {
-      let narEl = document.getElementById('pv-narrative');
+    // Key outputs
+    set('prof-credit', b.suggested_limit ? '$' + b.suggested_limit.toLocaleString() : '$—');
+    set('prof-apr', b.suggested_apr_low && b.suggested_apr_high ? b.suggested_apr_low + '% – ' + b.suggested_apr_high + '%' : '—%');
+
+    // Employment
+    set('pv-employer', b.employer || 'Not provided');
+
+    // Income - find and update income display elements
+    if (b.income_usd) {
+      const incEls = pv ? pv.querySelectorAll('.pv-income-val') : [];
+      incEls.forEach(el => el.textContent = '$' + b.income_usd.toLocaleString());
+      // Also update the monthly income display
+      const mIncome = document.getElementById('pv-monthly-income');
+      if (mIncome) mIncome.textContent = '$' + b.income_usd.toLocaleString() + '/mo';
+    }
+
+    // Analyst narrative - inject below header
+    if (b.analyst_narrative && pv) {
+      let narEl = document.getElementById('pv-real-narrative');
       if (!narEl) {
         narEl = document.createElement('div');
-        narEl.id = 'pv-narrative';
-        narEl.style.cssText = 'background:#f8fafc;border:1px solid #e2e8f0;border-radius:.75rem;padding:1.25rem;margin:1.25rem 2.5rem;font-size:.875rem;color:#475569;line-height:1.7;font-style:italic;';
-        const pvBody = pv ? pv.querySelector('[style*="max-width:1200px"]') : null;
+        narEl.id = 'pv-real-narrative';
+        narEl.style.cssText = 'margin:0 2.5rem 1.25rem;padding:1.25rem;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:.75rem;font-size:.875rem;color:#0f172a;line-height:1.7;';
+        const pvBody = pv.querySelector('[style*="max-width:1200px"]');
         if (pvBody) pvBody.insertBefore(narEl, pvBody.firstChild);
+        else pv.appendChild(narEl);
       }
-      narEl.innerHTML = '<strong style="color:#0f172a;font-style:normal;">Analyst Summary:</strong> "' + b.analyst_narrative + '"';
+      narEl.innerHTML = '<div style="font-size:.75rem;font-weight:600;color:#15803d;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.5rem;">✓ trbo Analyst Summary</div><em>"' + b.analyst_narrative + '"</em>';
+    }
+
+    // Key strengths
+    if (b.key_strengths && b.key_strengths.length && pv) {
+      let strEl = document.getElementById('pv-real-strengths');
+      if (!strEl) {
+        strEl = document.createElement('div');
+        strEl.id = 'pv-real-strengths';
+        strEl.style.cssText = 'margin:0 2.5rem 1.25rem;padding:1.25rem;background:#fff;border:1px solid #e2e8f0;border-radius:.75rem;';
+        const pvBody = pv.querySelector('[style*="max-width:1200px"]');
+        if (pvBody) pvBody.appendChild(strEl);
+      }
+      strEl.innerHTML = '<div style="font-size:.85rem;font-weight:600;color:#0f172a;margin-bottom:.75rem;">Key Factors</div>' +
+        b.key_strengths.map(s => '<div style="display:flex;gap:.5rem;margin-bottom:.4rem;font-size:.82rem;color:#0f172a;"><span style="color:#059669;">✓</span>' + s + '</div>').join('') +
+        (b.key_risks || []).map(r => '<div style="display:flex;gap:.5rem;margin-bottom:.4rem;font-size:.82rem;color:#0f172a;"><span style="color:#d97706;">⚠</span>' + r + '</div>').join('');
     }
 
     currentProfileBorrowerId = borrowerId;
-    setTimeout(() => { if(typeof initCharts==='function') initCharts(); }, 100);
+    setTimeout(() => { if(typeof initCharts==='function') try { initCharts(); } catch(e){} }, 200);
     showToast('Loaded profile: ' + b.name);
-  } catch(e) { console.error('openProfileFromDB error:', e); showToast('Error loading profile'); }
+  } catch(e) {
+    console.error('openProfileFromDB error:', e);
+    showToast('Error loading profile');
+  }
 }
 
 // Track requested docs per borrower
