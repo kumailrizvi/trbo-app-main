@@ -5604,19 +5604,8 @@ async function saveBorrowerToDB(scoreResult, formData) {
 // ═══════════════════════════════════════
 // SUPABASE REAL DATA LAYER
 // ═══════════════════════════════════════
-const SUPABASE_URL = 'https://hxylhisadsavizmsiazj.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh4eWxoaXNhZHNhdml6bXNpYXpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMjg0NzAsImV4cCI6MjA5MDgwNDQ3MH0.87X_uQJEBKQYEGodsKHFj6sBBn2BWs9HCDEszPl1zcw';
 
-const DEMO_LENDER_IDS = {
-  'lender_koho': '11111111-1111-1111-1111-111111111111',
-  'lender_borrowell': '22222222-2222-2222-2222-222222222222',
-  'lender_rbc': '33333333-3333-3333-3333-333333333333',
-};
-
-// Initialize Supabase client
-const supabase = (window.supabase && window.supabase.createClient)
-  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-  : null;
+// (supabase client already initialized above)
 
 
 // Step 2: After all JS loaded, show portal selector
@@ -6038,10 +6027,10 @@ window.refreshAnalytics = refreshAnalytics;
   };
   var lenderId = map[demoId];
   if (!lenderId) return;
-  // Hide landing
+  // Hide landing immediately
   var landing = document.getElementById('trbo-landing');
   if (landing) { landing.style.display = 'none'; landing.classList.remove('active'); }
-  // Show portal selector
+  // Show portal selector - LENDERS is defined in the main script above
   if (lenderId === 'trbo_admin') {
     currentSession = { role: 'trbo_admin', lenderId: 'trbo_admin' };
     currentLender = LENDERS[0];
