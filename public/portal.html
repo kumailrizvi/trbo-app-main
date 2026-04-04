@@ -3235,12 +3235,14 @@ async function handleDocUpload(input, docType) {
       { type: 'text', text: getParsePrompt(docType) }
     ];
 
+    await new Promise(r => setTimeout(r, 500 + Math.random()*1500));
     const resp = await fetch('/api/parse-doc', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ messages: msgContent })
     });
 
+    if (resp.status === 429) { console.warn('Rate limited, skipping parse'); throw new Error('API 429'); }
     if (!resp.ok) throw new Error('API ' + resp.status);
     const parsed = await resp.json();
     const txt = JSON.stringify(parsed);
@@ -4410,13 +4412,15 @@ async function wlHandleUpload(input, docType) {
       { type: 'text', text: getParsePrompt(docType === 'id' ? 'passport' : docType) }
     ];
 
+    await new Promise(r => setTimeout(r, 500 + Math.random()*1500));
     const resp = await fetch('/api/parse-doc', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ messages: msgContent })
     });
 
-    const parsed = await resp.json();
+    if (resp.status === 429) { console.warn('Rate limited, skipping parse'); throw new Error('API 429'); }
+    const parsed = resp.ok ? await resp.json() : {};
     const txt = JSON.stringify(parsed);
     parsedDocData[docType === 'id' ? 'passport' : docType] = parsed;
 

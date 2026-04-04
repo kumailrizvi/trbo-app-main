@@ -18,10 +18,11 @@ export async function POST(req: NextRequest) {
 
     if (content.length === 0) return NextResponse.json({ error: 'No content' }, { status: 400 })
 
-    // Retry up to 4 times with exponential backoff
-    for (let attempt = 0; attempt < 4; attempt++) {
+    // Retry up to 5 times with exponential backoff
+    for (let attempt = 0; attempt < 5; attempt++) {
       if (attempt > 0) {
-        await new Promise(r => setTimeout(r, attempt * 4000)) // 4s, 8s, 12s
+        const wait = attempt * 6000 // 6s, 12s, 18s, 24s
+        await new Promise(r => setTimeout(r, wait))
       }
 
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -35,15 +36,14 @@ export async function POST(req: NextRequest) {
           max_tokens: 1000,
           response_format: { type: 'json_object' },
           messages: [
-            { role: 'system', content: 'You are a financial document parser. Extract requested fields and return ONLY valid JSON, no markdown.' },
+            { role: 'system', content: 'You are a financial document parser. Extract all relevant financial data and return ONLY valid JSON.' },
             { role: 'user', content }
           ],
         }),
       })
 
       if (response.status === 429) {
-        console.log(`Rate limited, attempt ${attempt + 1}/4`)
-        if (attempt === 3) return NextResponse.json({ error: 'Rate limited — please wait 30s and retry' }, { status: 429 })
+        console.log(`Rate limited attempt ${attempt + 1}/5, waiting ${(attempt+1)*6}s...`)
         continue
       }
 
@@ -61,7 +61,12 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({ error: 'Failed after retries' }, { status: 500 })
+    // After all retries, return a partial success so the form can still submit
+    return NextResponse.json({ 
+      note: 'Document parsing rate limited - manual review required',
+      parsed: false 
+    })
+
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 })
   }
