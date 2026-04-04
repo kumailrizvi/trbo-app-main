@@ -5,10 +5,10 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 
 const DEMOS = [
-  { id: 'lender_koho', name: 'KOHO Financial', plan: 'Growth', color: '#2563eb', logo: 'K' },
-  { id: 'lender_borrowell', name: 'Borrowell', plan: 'Starter', color: '#059669', logo: 'B' },
-  { id: 'lender_rbc', name: 'RBC Newcomer', plan: 'Enterprise', color: '#dc2626', logo: 'R' },
-  { id: 'trbo_admin', name: 'trbo Admin', plan: 'Super Admin', color: '#455c62', logo: 'T' },
+  { id:'lender_koho', name:'KOHO Financial', plan:'Growth Plan', color:'#2563eb', logo:'K' },
+  { id:'lender_borrowell', name:'Borrowell', plan:'Starter Plan', color:'#059669', logo:'B' },
+  { id:'lender_rbc', name:'RBC Newcomer', plan:'Enterprise Plan', color:'#dc2626', logo:'R' },
+  { id:'trbo_admin', name:'trbo Admin', plan:'Super Admin', color:'#455c62', logo:'T' },
 ]
 
 export default function LoginPage() {
@@ -24,7 +24,7 @@ export default function LoginPage() {
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) throw error
-      router.push('/portal')
+      window.location.href = '/portal.html'
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Sign in failed')
       setLoading(false)
@@ -33,53 +33,54 @@ export default function LoginPage() {
 
   function loginAsDemo(id: string) {
     localStorage.setItem('trbo_demo_lender', id)
-    router.push('/portal')
+    window.location.href = '/portal.html'
   }
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center p-8">
-      <div className="w-full max-w-md">
-        <Link href="/" className="block text-center mb-8">
-          <div style={{fontFamily:"'DM Serif Display',serif"}} className="text-4xl text-[#455c62]">trbo.</div>
-          <div className="text-xs tracking-[0.3em] text-gray-400 uppercase mt-1">Financial</div>
+    <div style={{minHeight:'100vh',background:'#f8fafc',display:'flex',alignItems:'center',justifyContent:'center',padding:32,fontFamily:"'DM Sans',sans-serif"}}>
+      <div style={{width:'100%',maxWidth:440}}>
+        <Link href="/" style={{display:'block',textAlign:'center',marginBottom:32,textDecoration:'none'}}>
+          <div style={{fontFamily:"'DM Serif Display',serif",fontSize:40,color:'#455c62'}}>trbo.</div>
+          <div style={{fontSize:11,letterSpacing:'0.3em',color:'#94a3b8',textTransform:'uppercase',marginTop:4}}>Financial</div>
         </Link>
 
-        <div className="bg-white border border-gray-100 rounded-2xl p-8 shadow-sm mb-4">
-          <h1 className="text-xl font-semibold text-gray-900 mb-6">Sign in</h1>
-          {error && <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg mb-4">{error}</div>}
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Email</label>
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@company.com" required
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:border-[#455c62] focus:ring-2 focus:ring-[#455c62]/10 transition-all" />
+        <div style={{background:'white',border:'1px solid #e2e8f0',borderRadius:16,padding:32,boxShadow:'0 4px 20px rgba(0,0,0,0.06)',marginBottom:16}}>
+          <h1 style={{fontSize:20,fontWeight:600,color:'#0f172a',marginBottom:24}}>Sign in to your account</h1>
+          {error && <div style={{background:'#fef2f2',border:'1px solid #fecaca',color:'#dc2626',fontSize:13,padding:'10px 14px',borderRadius:8,marginBottom:16}}>{error}</div>}
+          <form onSubmit={handleLogin}>
+            <div style={{marginBottom:16}}>
+              <label style={{display:'block',fontSize:11,fontWeight:600,color:'#475569',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:6}}>Email</label>
+              <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@company.com" required
+                style={{width:'100%',padding:'10px 14px',border:'1px solid #e2e8f0',borderRadius:10,fontSize:14,outline:'none',background:'#f8fafc',color:'#0f172a',boxSizing:'border-box'}}/>
             </div>
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Password</label>
-              <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" required
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:border-[#455c62] focus:ring-2 focus:ring-[#455c62]/10 transition-all" />
+            <div style={{marginBottom:24}}>
+              <label style={{display:'block',fontSize:11,fontWeight:600,color:'#475569',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:6}}>Password</label>
+              <input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••••" required
+                style={{width:'100%',padding:'10px 14px',border:'1px solid #e2e8f0',borderRadius:10,fontSize:14,outline:'none',background:'#f8fafc',color:'#0f172a',boxSizing:'border-box'}}/>
             </div>
             <button type="submit" disabled={loading}
-              className="w-full bg-[#455c62] hover:bg-[#344a50] disabled:opacity-60 text-white font-semibold py-3.5 rounded-xl transition-colors">
+              style={{width:'100%',padding:'12px',background:'#455c62',color:'white',border:'none',borderRadius:10,fontSize:15,fontWeight:600,cursor:'pointer',opacity:loading?0.6:1}}>
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
-          <p className="text-center text-sm text-gray-500 mt-5">
-            No account? <Link href="/signup" className="text-[#455c62] font-medium">Create one →</Link>
+          <p style={{textAlign:'center',fontSize:13,color:'#64748b',marginTop:16}}>
+            No account? <Link href="/signup" style={{color:'#455c62',fontWeight:500}}>Create one →</Link>
           </p>
         </div>
 
-        <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
-          <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Demo Accounts</div>
-          <div className="space-y-2">
-            {DEMOS.map(d => (
-              <button key={d.id} onClick={() => loginAsDemo(d.id)}
-                className="w-full flex items-center gap-3 px-4 py-3 border border-gray-100 hover:border-gray-200 rounded-xl bg-gray-50 hover:bg-white transition-all text-left">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-xs flex-shrink-0" style={{background:d.color}}>{d.logo}</div>
-                <div className="flex-1"><div className="text-sm font-medium text-gray-900">{d.name}</div><div className="text-xs text-gray-400">{d.plan}</div></div>
-                <span className="text-xs text-[#455c62] font-medium">Sign in →</span>
-              </button>
-            ))}
-          </div>
+        <div style={{background:'white',border:'1px solid #e2e8f0',borderRadius:16,padding:20,boxShadow:'0 4px 20px rgba(0,0,0,0.06)'}}>
+          <div style={{fontSize:11,fontWeight:600,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:12}}>Demo Accounts</div>
+          {DEMOS.map(d => (
+            <button key={d.id} onClick={()=>loginAsDemo(d.id)}
+              style={{width:'100%',display:'flex',alignItems:'center',gap:12,padding:'10px 12px',border:'1px solid #f1f5f9',borderRadius:10,background:'#f8fafc',cursor:'pointer',fontFamily:'inherit',marginBottom:8,textAlign:'left'}}>
+              <div style={{width:32,height:32,borderRadius:8,background:d.color,color:'white',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,fontSize:12,flexShrink:0}}>{d.logo}</div>
+              <div style={{flex:1}}>
+                <div style={{fontSize:13,fontWeight:500,color:'#0f172a'}}>{d.name}</div>
+                <div style={{fontSize:11,color:'#94a3b8'}}>{d.plan}</div>
+              </div>
+              <span style={{fontSize:12,color:'#455c62',fontWeight:500}}>Sign in →</span>
+            </button>
+          ))}
         </div>
       </div>
     </div>
