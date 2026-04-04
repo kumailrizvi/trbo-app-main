@@ -1,14 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script>
-// Step 1: Hide landing immediately if session exists
-(function(){
-  if(localStorage.getItem('trbo_demo_lender')){
-    document.write('<style>#trbo-landing{display:none!important}</style>');
-  }
-})();
-</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>trbo Portal</title>
@@ -6033,6 +6025,36 @@ window.updateBorrowerStatus = updateBorrowerStatus;
 window.saveSettings = saveSettings;
 window.saveRiskThresholds = saveRiskThresholds;
 window.refreshAnalytics = refreshAnalytics;
+
+// ── AUTO LOGIN FROM NEXT.JS LOGIN PAGE
+(function() {
+  var demoId = localStorage.getItem('trbo_demo_lender');
+  if (!demoId) return;
+  var map = {
+    'lender_koho': 'lender_koho',
+    'lender_borrowell': 'lender_borrowell',
+    'lender_rbc': 'lender_rbc',
+    'trbo_admin': 'trbo_admin'
+  };
+  var lenderId = map[demoId];
+  if (!lenderId) return;
+  // Hide landing
+  var landing = document.getElementById('trbo-landing');
+  if (landing) { landing.style.display = 'none'; landing.classList.remove('active'); }
+  // Show portal selector
+  if (lenderId === 'trbo_admin') {
+    currentSession = { role: 'trbo_admin', lenderId: 'trbo_admin' };
+    currentLender = LENDERS[0];
+    showPortalSelector({ name: 'trbo Admin', id: 'trbo_admin' });
+  } else {
+    var lender = LENDERS.find(function(l) { return l.id === lenderId; });
+    if (lender) {
+      currentSession = { role: 'lender', lenderId: lenderId };
+      currentLender = lender;
+      showPortalSelector(lender);
+    }
+  }
+})();
 
 console.log('trbo real data layer loaded. supabase:', !!supabase);
 </script>
