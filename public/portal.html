@@ -8,16 +8,10 @@
 // ── AUTO LOGIN FROM NEXT.JS
 (function autoLoginFromNextJS() {
   const demoId = localStorage.getItem('trbo_demo_lender');
-  
-  if (!demoId) {
-    // No session — landing is already visible by default
-    return;
-  }
-  
-  // Has session — hide landing immediately, show blank white while loading
-  const landing = document.getElementById('trbo-landing');
-  if(landing) { landing.style.display = 'none'; landing.classList.remove('active'); }
-  document.body.style.background = '#f8fafc';
+  if (!demoId) return; // No session — landing shows by default
+
+  // Hide landing immediately via CSS before DOM parses
+  document.write('<style>#trbo-landing{display:none!important}</style>');
 
   const demoMap = {
     'lender_koho': 'lender_koho',
