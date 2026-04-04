@@ -3159,7 +3159,7 @@ function updateDashboardStats(rows) {
 // Open profile from DB row by borrower ID
 async function openProfileFromDB(borrowerId) {
   try {
-    const { data: b, error } = await supabase.from('borrowers').select('*').eq('id', borrowerId).single();
+    const { data: b, error } = await _sb.from('borrowers').select('*').eq('id', borrowerId).single();
     if(error || !b) { showToast('Could not load profile'); return; }
     
     // Populate profile view with real data
@@ -3829,7 +3829,7 @@ renderBorrowers = async function() {
   if(SUPABASE_URL !== 'YOUR_SUPABASE_URL' && currentLender?.id) {
     try {
       const lenderId = DEMO_LENDER_IDS[currentLender.id] || currentLender.id;
-      const { data: rows, error } = await supabase.from('borrowers').select('*').eq('lender_id', lenderId).order('created_at', { ascending: false });
+      const { data: rows, error } = await _sb.from('borrowers').select('*').eq('lender_id', lenderId).order('created_at', { ascending: false });
       if(!error && rows && rows.length > 0) {
         renderBorrowerRowsFromDB(rows);
         updateDashboardStats(rows);
@@ -4563,11 +4563,11 @@ async function handleLogin() {
   }
 
   try {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
+    const { data, error } = await _sb.auth.signInWithPassword({ email, password: pass });
     if(error) throw error;
 
     // Get user's lender
-    const { data: userData } = await supabase.from('users').select('*, lenders(*)').eq('id', data.user.id).single();
+    const { data: userData } = await _sb.from('users').select('*, lenders(*)').eq('id', data.user.id).single();
     if(userData?.lenders) {
       currentLender = {
         id: userData.lenders.id,
@@ -4621,12 +4621,12 @@ async function handleSignup() {
 
   try {
     // Create Supabase auth user
-    const { data, error } = await supabase.auth.signUp({ email, password: pass });
+    const { data, error } = await _sb.auth.signUp({ email, password: pass });
     if(error) throw error;
 
     // Create lender record
     const affiliateCode = company.toLowerCase().replace(/\s+/g,'_') + '_' + Date.now().toString(36);
-    const { data: lenderData, error: lenderErr } = await supabase.from('lenders').insert({
+    const { data: lenderData, error: lenderErr } = await _sb.from('lenders').insert({
       company_name: company,
       plan: 'starter',
       affiliate_code: affiliateCode,
@@ -4635,7 +4635,7 @@ async function handleSignup() {
     if(lenderErr) throw lenderErr;
 
     // Create user record
-    await supabase.from('users').insert({
+    await _sb.from('users').insert({
       id: data.user.id,
       email,
       name: (name + ' ' + lastName).trim() || email,
@@ -4712,10 +4712,10 @@ function showTrboAuth(tab) {
 
 // ── SAVE REAL BORROWER TO SUPABASE
 async function saveBorrowerToDB(scoreResult, formData) {
-  if(!supabase || SUPABASE_URL === 'YOUR_SUPABASE_URL') return null;
+  if(!_sb || SUPABASE_URL === 'YOUR_SUPABASE_URL') return null;
   try {
     const lenderId = currentLender?.id ? (DEMO_LENDER_IDS[currentLender.id] || currentLender.id) : null;
-    const { data, error } = await supabase.from('borrowers').insert({
+    const { data, error } = await _sb.from('borrowers').insert({
       lender_id: lenderId,
       name: formData.name || 'Unknown',
       email: formData.email || null,
@@ -5714,50 +5714,7 @@ renderDashboard = async function() {
 };
 
 // ── 2. Override renderBorrowers to use Supabase
-const _origRenderBorrowers = typeof renderBorrowers === 'function' ? renderBorrowers : null;
-renderBorrowers = async function() {
-  if (!_sb || !currentLender) { if(_origRenderBorrowers) _origRenderBorrowers(); return; }
-  const lenderId = getDbLenderId();
-  if (!lenderId) { if(_origRenderBorrowers) _origRenderBorrowers(); return; }
 
-  try {
-    const { data: rows } = await _sb.from('borrowers').select('*')
-      .eq('lender_id', lenderId).order('created_at', { ascending: false });
-
-    if (!rows) { if(_origRenderBorrowers) _origRenderBorrowers(); return; }
-
-    const tbody = document.getElementById('borrowers-tbody');
-    if (!tbody) return;
-
-    if (rows.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" style="padding:3rem;text-align:center;color:#94a3b8;">No borrowers yet — share your affiliate link to get started</td></tr>';
-      return;
-    }
-
-    tbody.innerHTML = rows.map(row => {
-      const riskBg = row.risk === 'Low' ? '#dcfce7' : row.risk === 'Medium' ? '#fef9c3' : '#fee2e2';
-      const riskColor = row.risk === 'Low' ? '#15803d' : row.risk === 'Medium' ? '#a16207' : '#dc2626';
-      const statusBg = (row.status === 'Ready' || row.status === 'approved') ? '#dcfce7' : row.status === 'Under Review' ? '#fef9c3' : '#dbeafe';
-      const statusColor = (row.status === 'Ready' || row.status === 'approved') ? '#15803d' : row.status === 'Under Review' ? '#a16207' : '#1d4ed8';
-      const date = row.created_at ? new Date(row.created_at).toLocaleDateString('en-CA') : '—';
-      return `<tr style="border-bottom:1px solid var(--slate-100);">
-        <td style="padding:.85rem 1.25rem;">
-          <span style="font-weight:500;color:var(--slate-900);">${row.name}</span>
-          ${row.is_demo ? '<span style="font-size:.65rem;background:#f1f5f9;color:#94a3b8;padding:.1rem .4rem;border-radius:3px;margin-left:.4rem;">demo</span>' : '<span style="font-size:.65rem;background:#dcfce7;color:#15803d;padding:.1rem .4rem;border-radius:3px;margin-left:.4rem;">real</span>'}
-        </td>
-        <td style="padding:.85rem 1.25rem;color:var(--slate-500);">${row.origin_country || '—'} → ${row.destination_country || '—'}</td>
-        <td style="padding:.85rem 1.25rem;font-weight:700;color:var(--slate-900);">${row.global_score || '—'}</td>
-        <td style="padding:.85rem 1.25rem;"><span style="font-size:.75rem;padding:.2rem .6rem;border-radius:9999px;background:${riskBg};color:${riskColor};font-weight:500;">${row.risk || '—'}</span></td>
-        <td style="padding:.85rem 1.25rem;"><span style="font-size:.75rem;padding:.2rem .6rem;border-radius:9999px;background:${statusBg};color:${statusColor};font-weight:500;">${row.status}</span></td>
-        <td style="padding:.85rem 1.25rem;color:var(--slate-400);font-size:.82rem;">${date}</td>
-        <td style="padding:.85rem 1.25rem;text-align:right;"><button onclick="viewBorrower('${row.id}')" class="action-btn primary" style="padding:.35rem .85rem;font-size:.78rem;">View Profile</button></td>
-      </tr>`;
-    }).join('');
-  } catch(e) {
-    console.error('renderBorrowers DB error:', e);
-    if(_origRenderBorrowers) _origRenderBorrowers();
-  }
-};
 
 // ── 3. viewBorrower - fetch from Supabase and show profile
 async function viewBorrower(id) {
