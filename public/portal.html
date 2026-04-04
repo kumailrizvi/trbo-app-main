@@ -10,13 +10,13 @@
   const demoId = localStorage.getItem('trbo_demo_lender');
   
   if (!demoId) {
-    // No session — show landing page
-    const l = document.getElementById('trbo-landing');
-    if(l) { l.style.display = 'block'; l.classList.add('active'); }
+    // No session — landing is already visible by default
     return;
   }
   
-  // Has session — show loading spinner while JS initialises
+  // Has session — hide landing immediately, show blank white while loading
+  const landing = document.getElementById('trbo-landing');
+  if(landing) { landing.style.display = 'none'; landing.classList.remove('active'); }
   document.body.style.background = '#f8fafc';
 
   const demoMap = {
@@ -608,7 +608,7 @@ function showLanding() {
 
 <!-- ══════════════════════════════════════ LANDING -->
 <!-- ══════ trbo LANDING PAGE ══════ -->
-<div id="trbo-landing" class="view" style="display:none;min-height:100vh;background:#0d1117;font-family:'DM Sans',sans-serif;overflow-x:hidden;">
+<div id="trbo-landing" class="view active" style="display:block;min-height:100vh;background:#0d1117;font-family:'DM Sans',sans-serif;overflow-x:hidden;">
 
   <!-- Fonts -->
   <style>
