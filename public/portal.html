@@ -1825,6 +1825,12 @@ const DEMO_LENDER_IDS = {
   'lender_borrowell': '22222222-2222-2222-2222-222222222222',
   'lender_rbc': '33333333-3333-3333-3333-333333333333',
 };
+// Initialize _sb Supabase client RIGHT HERE so it's available to all functions below
+var _sb = (window.supabase && window.supabase.createClient)
+  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+  : null;
+if (_sb) { console.log('_sb ready'); } else { console.warn('_sb not ready - CDN may not have loaded yet'); }
+
 // Use _sb client (defined below in main script)
 
 
