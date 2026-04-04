@@ -10,36 +10,25 @@
   const demoId = localStorage.getItem('trbo_demo_lender');
   if (!demoId) return; // No session — landing shows by default
 
-  // Hide landing immediately via CSS before DOM parses
+  // Hide landing before it renders
   document.write('<style>#trbo-landing{display:none!important}</style>');
 
-  const demoMap = {
-    'lender_koho': 'lender_koho',
-    'lender_borrowell': 'lender_borrowell',
-    'lender_rbc': 'lender_rbc',
-    'trbo_admin': 'trbo_admin',
-  };
-  
-  const lenderId = demoMap[demoId];
-  if (!lenderId) {
-    const l = document.getElementById('trbo-landing');
-    if(l) { l.style.display = 'block'; l.classList.add('active'); }
-    return;
-  }
-  
-  // Wait for all JS to initialise then auto-login
-  setTimeout(function() {
+  // Wait for full page load before navigating
+  window.addEventListener('load', function() {
+    const demoMap = {
+      'lender_koho': 'lender_koho',
+      'lender_borrowell': 'lender_borrowell',
+      'lender_rbc': 'lender_rbc',
+      'trbo_admin': 'trbo_admin',
+    };
+    const lenderId = demoMap[demoId];
+    if (!lenderId) return;
+
     try {
       if (lenderId === 'trbo_admin') {
         currentSession = { role: 'trbo_admin', lenderId: 'trbo_admin' };
         currentLender = LENDERS[0];
-        goLender();
-        setTimeout(function() {
-          if(typeof renderSuperAdmin === 'function') renderSuperAdmin();
-          if(typeof showLenderPage === 'function') showLenderPage('super-admin', null);
-          const adminBtn = document.getElementById('sidebar-super-admin-btn');
-          if(adminBtn) adminBtn.style.display = 'flex';
-        }, 100);
+        showPortalSelector({ name: 'trbo Admin', id: 'trbo_admin' });
       } else {
         const lender = LENDERS.find(function(l) { return l.id === lenderId; });
         if (lender) {
@@ -50,12 +39,9 @@
       }
     } catch(e) {
       console.error('Auto-login failed:', e);
-      // Fallback: show landing
-      const l = document.getElementById('trbo-landing');
-      if(l) { l.style.display = 'block'; l.classList.add('active'); }
     }
-  }, 300);
-})();
+  });
+})();();
 
 </script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
