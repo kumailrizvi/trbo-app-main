@@ -24,6 +24,8 @@ export default function LoginPage() {
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) throw error
+      // Clear any demo session so real auth takes over
+      localStorage.removeItem('trbo_demo_lender')
       window.location.href = '/portal.html'
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Sign in failed')

@@ -5997,7 +5997,11 @@ window.refreshAnalytics = refreshAnalytics;
 // ── AUTO LOGIN FROM NEXT.JS LOGIN PAGE
 (function() {
   var demoId = localStorage.getItem('trbo_demo_lender');
-  if (!demoId) return;
+  if (!demoId) {
+    // No demo session - check if there's a real Supabase session
+    // The portal will handle real auth via its own auth flow
+    return;
+  }
   var map = {
     'lender_koho': 'lender_koho',
     'lender_borrowell': 'lender_borrowell',
