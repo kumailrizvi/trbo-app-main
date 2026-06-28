@@ -5,9 +5,9 @@ import Link from 'next/link'
 import { supabase, type Lender } from '@/lib/supabase'
 
 const DEMO_LENDERS: Record<string, Lender> = {
-  lender_koho: { id:'lender_koho', company_name:'KOHO Financial', plan:'growth', primary_color:'#2563eb', affiliate_code:'koho_canada_q2', min_score:650, max_risk:'Medium', corridors:[] },
-  lender_borrowell: { id:'lender_borrowell', company_name:'Borrowell', plan:'starter', primary_color:'#059669', affiliate_code:'', min_score:620, max_risk:'High', corridors:[] },
-  lender_rbc: { id:'lender_rbc', company_name:'RBC Newcomer', plan:'enterprise', primary_color:'#dc2626', affiliate_code:'', min_score:720, max_risk:'Low', corridors:[] },
+  lender_koho: { id:'lender_koho', company_name:'XYZ Financial', plan:'growth', primary_color:'#2563eb', affiliate_code:'koho_canada_q2', min_score:650, max_risk:'Medium', corridors:[] },
+  lender_borrowell: { id:'lender_borrowell', company_name:'Maple Lending', plan:'starter', primary_color:'#059669', affiliate_code:'', min_score:620, max_risk:'High', corridors:[] },
+  lender_rbc: { id:'lender_rbc', company_name:'Horizon Credit', plan:'enterprise', primary_color:'#dc2626', affiliate_code:'', min_score:720, max_risk:'Low', corridors:[] },
   trbo_admin: { id:'trbo_admin', company_name:'trbo Admin', plan:'admin', primary_color:'#455c62', affiliate_code:'', min_score:0, max_risk:'High', corridors:[] },
 }
 

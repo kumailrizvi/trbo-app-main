@@ -6,9 +6,9 @@ import { supabase, DEMO_LENDER_IDS, type Borrower, type Lender } from '@/lib/sup
 import { Search, Filter, ArrowLeft } from 'lucide-react'
 
 const DEMO_LENDERS: Record<string, Lender> = {
-  lender_koho: { id: 'lender_koho', company_name: 'KOHO Financial', plan: 'growth', primary_color: '#2563eb', affiliate_code: '', min_score: 650, max_risk: 'Medium', corridors: [] },
-  lender_borrowell: { id: 'lender_borrowell', company_name: 'Borrowell', plan: 'starter', primary_color: '#059669', affiliate_code: '', min_score: 620, max_risk: 'High', corridors: [] },
-  lender_rbc: { id: 'lender_rbc', company_name: 'RBC Newcomer', plan: 'enterprise', primary_color: '#dc2626', affiliate_code: '', min_score: 720, max_risk: 'Low', corridors: [] },
+  lender_koho: { id: 'lender_koho', company_name: 'XYZ Financial', plan: 'growth', primary_color: '#2563eb', affiliate_code: '', min_score: 650, max_risk: 'Medium', corridors: [] },
+  lender_borrowell: { id: 'lender_borrowell', company_name: 'Maple Lending', plan: 'starter', primary_color: '#059669', affiliate_code: '', min_score: 620, max_risk: 'High', corridors: [] },
+  lender_rbc: { id: 'lender_rbc', company_name: 'Horizon Credit', plan: 'enterprise', primary_color: '#dc2626', affiliate_code: '', min_score: 720, max_risk: 'Low', corridors: [] },
 }
 
 export default function BorrowersPage() {
