@@ -64,9 +64,15 @@
     .tl-dash-dot { width:10px;height:10px;border-radius:50%; }
     .tl-dash-body { display:grid;grid-template-columns:200px 1fr;min-height:380px; }
     .tl-dash-sidebar { background:#455c62;padding:1.25rem;display:flex;flex-direction:column;gap:.25rem; }
-    .tl-dash-nav-item { padding:.6rem .85rem;border-radius:6px;font-size:.78rem;color:rgba(255,255,255,0.6);display:flex;align-items:center;gap:.6rem;cursor:pointer; }
+    .tl-dash-nav-item { padding:.6rem .85rem;border-radius:6px;font-size:.78rem;color:rgba(255,255,255,0.6);display:flex;align-items:center;gap:.6rem;cursor:pointer;background:none;border:none;font-family:'DM Sans',sans-serif;text-align:left;width:100%; }
     .tl-dash-nav-item.active { background:rgba(255,255,255,0.18);color:#fff;font-weight:500; }
     .tl-dash-nav-item svg { width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0; }
+    .tl-dash-panel { display:none; }
+    .tl-dash-panel.active { display:block; }
+    .tl-dash-panel-title { font-size:1rem;font-weight:700;color:#0f172a;margin-bottom:.35rem; }
+    .tl-dash-panel-sub { font-size:.72rem;color:#94a3b8;margin-bottom:1rem; }
+    .tl-dash-mini-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin-bottom:1.25rem; }
+    .tl-dash-action { color:#455c62;font-weight:600; }
     .tl-dash-content { padding:1.5rem;background:#f8fafc; }
     .tl-dash-cards { display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem;margin-bottom:1.25rem; }
     .tl-dash-card { background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:1rem; }
@@ -83,6 +89,8 @@
     .tl-badge { display:inline-block;padding:.15rem .55rem;border-radius:9999px;font-size:.65rem;font-weight:500; }
     .tl-badge.low { background:#dcfce7;color:#15803d; }
     .tl-badge.med { background:#fef9c3;color:#a16207; }
+    @media(max-width:900px){.tl-preview>div{grid-template-columns:1fr!important;gap:2rem!important;}.tl-dash-cards,.tl-dash-mini-grid{grid-template-columns:repeat(2,1fr);}}
+    @media(max-width:640px){.tl-preview{padding:3rem 1rem;}.tl-dash-body{grid-template-columns:1fr;}.tl-dash-sidebar{display:flex;flex-direction:row;overflow-x:auto;padding:.85rem;}.tl-dash-sidebar>div:first-child{display:none;}.tl-dash-nav-item{width:auto;white-space:nowrap;flex:0 0 auto;}.tl-dash-content{padding:1rem;overflow-x:auto;}.tl-dash-cards,.tl-dash-mini-grid{grid-template-columns:1fr;}.tl-dash-table{min-width:520px;}}
 
     /* How it works */
     .tl-how { padding:6rem 3rem;max-width:1200px;margin:0 auto; }
@@ -203,28 +211,64 @@
           <div class="tl-dash-dot" style="background:#ff5f57;"></div>
           <div class="tl-dash-dot" style="background:#ffbd2e;"></div>
           <div class="tl-dash-dot" style="background:#28c840;"></div>
-          <div style="flex:1;text-align:center;font-size:.7rem;color:rgba(255,255,255,0.2);">trbo.io/lender/dashboard</div>
+          <div data-mock-route style="flex:1;text-align:center;font-size:.7rem;color:rgba(255,255,255,0.2);">trbo.io/lender/dashboard</div>
         </div>
         <div class="tl-dash-body">
           <div class="tl-dash-sidebar">
             <div style="font-family:'DM Serif Display',serif;font-size:1.1rem;color:#fff;padding:.5rem .85rem 1rem;">trbo.</div>
-            <div class="tl-dash-nav-item active"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Dashboard</div>
-            <div class="tl-dash-nav-item"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Borrowers</div>
-            <div class="tl-dash-nav-item"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Run Check</div>
-            <div class="tl-dash-nav-item"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Analytics</div>
+            <button type="button" class="tl-dash-nav-item active" data-mock-tab="dashboard" onclick="showTlDashPanel(this,'dashboard')"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Dashboard</button>
+            <button type="button" class="tl-dash-nav-item" data-mock-tab="borrowers" onclick="showTlDashPanel(this,'borrowers')"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Borrowers</button>
+            <button type="button" class="tl-dash-nav-item" data-mock-tab="work-queues" onclick="showTlDashPanel(this,'work-queues')"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="7" height="7"/><rect x="14" y="4" width="7" height="7"/><rect x="3" y="15" width="7" height="5"/><rect x="14" y="15" width="7" height="5"/></svg>Work Queues</button>
+            <button type="button" class="tl-dash-nav-item" data-mock-tab="run-check" onclick="showTlDashPanel(this,'run-check')"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Run Check</button>
+            <button type="button" class="tl-dash-nav-item" data-mock-tab="analytics" onclick="showTlDashPanel(this,'analytics')"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Analytics</button>
           </div>
           <div class="tl-dash-content">
-            <div class="tl-dash-cards">
-              <div class="tl-dash-card"><div class="tl-dash-card-num">1,247</div><div class="tl-dash-card-label">Borrowers</div><div class="tl-dash-card-trend">↑ +12%</div></div>
-              <div class="tl-dash-card"><div class="tl-dash-card-num">892</div><div class="tl-dash-card-label">Approved</div><div class="tl-dash-card-trend">↑ +8%</div></div>
-              <div class="tl-dash-card"><div class="tl-dash-card-num">71%</div><div class="tl-dash-card-label">Approval rate</div><div class="tl-dash-card-trend">↑ +4%</div></div>
-              <div class="tl-dash-card"><div class="tl-dash-card-num">2.4s</div><div class="tl-dash-card-label">Avg score time</div><div class="tl-dash-card-trend">↓ -0.8s</div></div>
+            <div class="tl-dash-panel active" data-mock-panel="dashboard">
+              <div class="tl-dash-cards">
+                <div class="tl-dash-card"><div class="tl-dash-card-num">1,247</div><div class="tl-dash-card-label">Borrowers</div><div class="tl-dash-card-trend">↑ +12%</div></div>
+                <div class="tl-dash-card"><div class="tl-dash-card-num">892</div><div class="tl-dash-card-label">Approved</div><div class="tl-dash-card-trend">↑ +8%</div></div>
+                <div class="tl-dash-card"><div class="tl-dash-card-num">71%</div><div class="tl-dash-card-label">Approval rate</div><div class="tl-dash-card-trend">↑ +4%</div></div>
+                <div class="tl-dash-card"><div class="tl-dash-card-num">2.4s</div><div class="tl-dash-card-label">Avg score time</div><div class="tl-dash-card-trend">↓ -0.8s</div></div>
+              </div>
+              <div class="tl-dash-table">
+                <div class="tl-dash-table-header"><div class="tl-dash-th">Borrower</div><div class="tl-dash-th">Corridor</div><div class="tl-dash-th">Score</div><div class="tl-dash-th">Risk</div></div>
+                <div class="tl-dash-row"><div class="tl-dash-name">Mohammed Al-Rahman</div><div class="tl-dash-corr">🇦🇪→🇨🇦</div><div class="tl-dash-score">782</div><div><span class="tl-badge low">Low</span></div></div>
+                <div class="tl-dash-row"><div class="tl-dash-name">Priya Sharma</div><div class="tl-dash-corr">🇮🇳→🇬🇧</div><div class="tl-dash-score">698</div><div><span class="tl-badge med">Medium</span></div></div>
+                <div class="tl-dash-row"><div class="tl-dash-name">Carlos Mendez</div><div class="tl-dash-corr">🇲🇽→🇨🇦</div><div class="tl-dash-score">845</div><div><span class="tl-badge low">Low</span></div></div>
+              </div>
             </div>
-            <div class="tl-dash-table">
-              <div class="tl-dash-table-header"><div class="tl-dash-th">Borrower</div><div class="tl-dash-th">Corridor</div><div class="tl-dash-th">Score</div><div class="tl-dash-th">Risk</div></div>
-              <div class="tl-dash-row"><div class="tl-dash-name">Mohammed Al-Rahman</div><div class="tl-dash-corr">🇦🇪→🇨🇦</div><div class="tl-dash-score">782</div><div><span class="tl-badge low">Low</span></div></div>
-              <div class="tl-dash-row"><div class="tl-dash-name">Priya Sharma</div><div class="tl-dash-corr">🇮🇳→🇬🇧</div><div class="tl-dash-score">698</div><div><span class="tl-badge med">Medium</span></div></div>
-              <div class="tl-dash-row"><div class="tl-dash-name">Carlos Mendez</div><div class="tl-dash-corr">🇲🇽→🇨🇦</div><div class="tl-dash-score">845</div><div><span class="tl-badge low">Low</span></div></div>
+            <div class="tl-dash-panel" data-mock-panel="borrowers">
+              <div class="tl-dash-panel-title">Borrowers</div><div class="tl-dash-panel-sub">Search and review active cross-border applicants.</div>
+              <div class="tl-dash-table"><div class="tl-dash-table-header"><div class="tl-dash-th">Borrower</div><div class="tl-dash-th">Status</div><div class="tl-dash-th">Score</div><div class="tl-dash-th">Action</div></div>
+                <div class="tl-dash-row"><div class="tl-dash-name">Amina Yusuf</div><div class="tl-dash-corr">Manual review</div><div class="tl-dash-score">724</div><div class="tl-dash-action">Open →</div></div>
+                <div class="tl-dash-row"><div class="tl-dash-name">Chen Wei</div><div class="tl-dash-corr">Approved</div><div class="tl-dash-score">811</div><div class="tl-dash-action">View →</div></div>
+                <div class="tl-dash-row"><div class="tl-dash-name">Ana Silva</div><div class="tl-dash-corr">Documents due</div><div class="tl-dash-score">—</div><div class="tl-dash-action">Request →</div></div>
+              </div>
+            </div>
+            <div class="tl-dash-panel" data-mock-panel="work-queues">
+              <div class="tl-dash-panel-title">Work Queues</div><div class="tl-dash-panel-sub">Prioritized queues for underwriters and operations teams.</div>
+              <div class="tl-dash-mini-grid">
+                <div class="tl-dash-card"><div class="tl-dash-card-num">18</div><div class="tl-dash-card-label">New applications</div><div class="tl-dash-card-trend">Due today</div></div>
+                <div class="tl-dash-card"><div class="tl-dash-card-num">7</div><div class="tl-dash-card-label">Needs review</div><div class="tl-dash-card-trend">High priority</div></div>
+                <div class="tl-dash-card"><div class="tl-dash-card-num">4</div><div class="tl-dash-card-label">Doc checks</div><div class="tl-dash-card-trend">Waiting borrower</div></div>
+              </div>
+              <div class="tl-dash-table"><div class="tl-dash-table-header"><div class="tl-dash-th">Queue</div><div class="tl-dash-th">Owner</div><div class="tl-dash-th">SLA</div><div class="tl-dash-th">Next</div></div>
+                <div class="tl-dash-row"><div class="tl-dash-name">Income variance</div><div class="tl-dash-corr">Maya</div><div class="tl-dash-score">1h</div><div class="tl-dash-action">Review →</div></div>
+                <div class="tl-dash-row"><div class="tl-dash-name">Identity match</div><div class="tl-dash-corr">Ops</div><div class="tl-dash-score">2h</div><div class="tl-dash-action">Verify →</div></div>
+              </div>
+            </div>
+            <div class="tl-dash-panel" data-mock-panel="run-check">
+              <div class="tl-dash-panel-title">Run Check</div><div class="tl-dash-panel-sub">Upload borrower documents and generate an explainable profile.</div>
+              <div class="tl-dash-card" style="text-align:center;padding:2rem;border-style:dashed;"><div class="tl-dash-card-num">＋</div><div class="tl-dash-card-label">Drop bank statements, payslips, remittances, and ID</div><div class="tl-dash-card-trend">Generate score →</div></div>
+            </div>
+            <div class="tl-dash-panel" data-mock-panel="analytics">
+              <div class="tl-dash-panel-title">Analytics</div><div class="tl-dash-panel-sub">Track corridor conversion, approvals, and risk bands.</div>
+              <div class="tl-dash-cards">
+                <div class="tl-dash-card"><div class="tl-dash-card-num">42%</div><div class="tl-dash-card-label">Canada corridor</div><div class="tl-dash-card-trend">↑ +6%</div></div>
+                <div class="tl-dash-card"><div class="tl-dash-card-num">68%</div><div class="tl-dash-card-label">Auto decisioned</div><div class="tl-dash-card-trend">↑ +11%</div></div>
+                <div class="tl-dash-card"><div class="tl-dash-card-num">19</div><div class="tl-dash-card-label">Active lenders</div><div class="tl-dash-card-trend">↑ +3</div></div>
+                <div class="tl-dash-card"><div class="tl-dash-card-num">0.7%</div><div class="tl-dash-card-label">Default signal</div><div class="tl-dash-card-trend">↓ -0.2%</div></div>
+              </div>
             </div>
           </div>
         </div>
@@ -5081,6 +5125,15 @@ async function saveBorrowerToDB(scoreResult, formData) {
   // Wire up nav buttons to login page
   function showTrboAuth(tab) { window.location.href = tab === 'signup' ? '/signup' : '/login'; }
   function showLanding() {}
+
+  function showTlDashPanel(btn, panel) {
+    const mock = btn.closest('.tl-dash-mock');
+    if (!mock) return;
+    mock.querySelectorAll('.tl-dash-nav-item').forEach(item => item.classList.toggle('active', item === btn));
+    mock.querySelectorAll('[data-mock-panel]').forEach(item => item.classList.toggle('active', item.getAttribute('data-mock-panel') === panel));
+    const route = mock.querySelector('[data-mock-route]');
+    if (route) route.textContent = 'trbo.io/lender/' + panel;
+  }
 </script>
 </body>
 </html>
