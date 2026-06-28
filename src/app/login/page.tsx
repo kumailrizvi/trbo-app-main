@@ -5,9 +5,9 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 
 const DEMOS = [
-  { id:'lender_koho', name:'KOHO Financial', plan:'Growth Plan', color:'#2563eb', logo:'K' },
-  { id:'lender_borrowell', name:'Borrowell', plan:'Starter Plan', color:'#059669', logo:'B' },
-  { id:'lender_rbc', name:'RBC Newcomer', plan:'Enterprise Plan', color:'#dc2626', logo:'R' },
+  { id:'lender_koho', name:'XYZ Financial', plan:'Growth Plan', color:'#2563eb', logo:'X' },
+  { id:'lender_borrowell', name:'Acme Lending', plan:'Starter Plan', color:'#059669', logo:'A' },
+  { id:'lender_rbc', name:'Example Bank Newcomer', plan:'Enterprise Plan', color:'#dc2626', logo:'E' },
   { id:'trbo_admin', name:'trbo Admin', plan:'Super Admin', color:'#455c62', logo:'T' },
 ]
 
