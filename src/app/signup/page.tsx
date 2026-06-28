@@ -12,7 +12,18 @@ export default function SignupPage() {
   const [form, setForm] = useState({ firstName:'', lastName:'', company:'', email:'', password:'', type:'Fintech Lender' })
 
   function set(k: string) { return (e: React.ChangeEvent<HTMLInputElement|HTMLSelectElement>) => setForm(f => ({...f,[k]:e.target.value})) }
-  function setMeetingField(k: 'date'|'time') { return (e: React.ChangeEvent<HTMLInputElement|HTMLSelectElement>) => setMeeting(m => ({...m,[k]:e.target.value})) }
+  const calendarDays = Array.from({ length: 10 }, (_, i) => {
+    const date = new Date()
+    date.setDate(date.getDate() + i + 1)
+    const value = date.toISOString().slice(0, 10)
+    return {
+      value,
+      day: date.toLocaleDateString('en-US', { weekday: 'short' }),
+      number: date.getDate(),
+      month: date.toLocaleDateString('en-US', { month: 'short' }),
+    }
+  })
+  const meetingTimes = ['9:30 AM','10:00 AM','11:30 AM','1:00 PM','2:30 PM','4:00 PM']
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault()
@@ -97,10 +108,30 @@ export default function SignupPage() {
               <div style={{marginBottom:16}}><label style={{display:'block',fontSize:11,fontWeight:600,color:'#475569',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:6}}>Work Email</label><input type="email" value={form.email} onChange={set('email')} placeholder="you@company.com" required style={{width:'100%',padding:'10px 14px',border:'1px solid #e2e8f0',borderRadius:10,fontSize:14,outline:'none',background:'#f8fafc',color:'#0f172a',boxSizing:'border-box'}}/></div>
               <div style={{marginBottom:24}}><label style={{display:'block',fontSize:11,fontWeight:600,color:'#475569',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:6}}>Password</label><input type="password" value={form.password} onChange={set('password')} placeholder="Min. 8 characters" required style={{width:'100%',padding:'10px 14px',border:'1px solid #e2e8f0',borderRadius:10,fontSize:14,outline:'none',background:'#f8fafc',color:'#0f172a',boxSizing:'border-box'}}/></div>
             </> : <>
-              <div style={{background:'#f8fafc',border:'1px solid #e2e8f0',borderRadius:12,padding:16,marginBottom:16}}>
-                <div style={{fontSize:12,fontWeight:700,color:'#455c62',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:10}}>Onboarding calendar</div>
-                <input type="date" value={meeting.date} onChange={setMeetingField('date')} required style={{width:'100%',padding:'10px 14px',border:'1px solid #e2e8f0',borderRadius:10,fontSize:14,outline:'none',background:'white',color:'#0f172a',boxSizing:'border-box',marginBottom:12}} />
-                <select value={meeting.time} onChange={setMeetingField('time')} style={{width:'100%',padding:'10px 14px',border:'1px solid #e2e8f0',borderRadius:10,fontSize:14,outline:'none',background:'white',color:'#0f172a'}}>{['10:00 AM','11:30 AM','1:00 PM','2:30 PM','4:00 PM'].map(t => <option key={t}>{t}</option>)}</select>
+              <div style={{background:'#f8fafc',border:'1px solid #e2e8f0',borderRadius:14,padding:16,marginBottom:16}}>
+                <div style={{fontSize:12,fontWeight:700,color:'#455c62',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:12}}>Onboarding calendar</div>
+                <div style={{display:'grid',gridTemplateColumns:'1.2fr .8fr',gap:14}}>
+                  <div>
+                    <div style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:8}}>
+                      {calendarDays.map(day => (
+                        <button key={day.value} type="button" onClick={() => setMeeting(m => ({...m,date:day.value}))}
+                          style={{padding:'10px 4px',border:meeting.date===day.value?'2px solid #455c62':'1px solid #e2e8f0',borderRadius:10,background:meeting.date===day.value?'#eef4f5':'white',cursor:'pointer',fontFamily:'inherit'}}>
+                          <div style={{fontSize:10,fontWeight:700,color:'#64748b',textTransform:'uppercase'}}>{day.day}</div>
+                          <div style={{fontSize:18,fontWeight:700,color:'#0f172a',lineHeight:1.2}}>{day.number}</div>
+                          <div style={{fontSize:10,color:'#94a3b8'}}>{day.month}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div style={{display:'flex',flexDirection:'column',gap:8}}>
+                    {meetingTimes.map(time => (
+                      <button key={time} type="button" onClick={() => setMeeting(m => ({...m,time}))}
+                        style={{padding:'10px 12px',border:meeting.time===time?'2px solid #455c62':'1px solid #e2e8f0',borderRadius:10,background:meeting.time===time?'#455c62':'white',color:meeting.time===time?'white':'#0f172a',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
+                        {time}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
               <button type="button" onClick={() => setStep('account')} style={{width:'100%',padding:'10px',background:'transparent',color:'#64748b',border:'1px solid #e2e8f0',borderRadius:10,fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'inherit',marginBottom:12}}>← Back</button>
             </>}

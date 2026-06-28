@@ -4838,8 +4838,19 @@ function promptDemoLogin(lenderId, label) {
   const labelEl = document.getElementById('demo-password-label');
   if(labelEl) labelEl.textContent = label;
   if(error) error.style.display = 'none';
-  if(panel) panel.style.display = 'block';
+  if(panel) panel.style.display = 'flex';
   if(input) { input.value = ''; input.focus(); }
+}
+
+
+function closeDemoLogin() {
+  const panel = document.getElementById('demo-password-panel');
+  const input = document.getElementById('demo-password-input');
+  const error = document.getElementById('demo-password-error');
+  pendingDemoLenderId = null;
+  if(input) input.value = '';
+  if(error) error.style.display = 'none';
+  if(panel) panel.style.display = 'none';
 }
 
 function confirmDemoLogin() {
@@ -5521,11 +5532,18 @@ async function saveBorrowerToDB(scoreResult, formData) {
           <span style="font-size:.68rem;color:#455c62;font-weight:500;">Sign in →</span>
         </button>
       </div>
-      <div id="demo-password-panel" style="display:none;border-top:1px solid #f1f5f9;margin-top:.75rem;padding-top:.85rem;">
-        <div id="demo-password-label" style="font-size:.78rem;font-weight:600;color:#0f172a;margin-bottom:.5rem;">Demo sign in</div>
-        <input id="demo-password-input" type="password" style="width:100%;padding:.65rem .75rem;border:1px solid #e2e8f0;border-radius:.45rem;font-size:.82rem;outline:none;background:#f8fafc;box-sizing:border-box;margin-bottom:.5rem;">
-        <div id="demo-password-error" style="display:none;color:#dc2626;font-size:.72rem;margin-bottom:.5rem;">Invalid password</div>
-        <button onclick="confirmDemoLogin()" style="width:100%;padding:.65rem;background:#455c62;color:#fff;border:none;border-radius:.45rem;font-size:.82rem;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;">Sign In</button>
+      <div id="demo-password-panel" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.45);align-items:center;justify-content:center;padding:1.5rem;z-index:9999;">
+        <div style="width:100%;max-width:360px;background:#fff;border:1px solid #e2e8f0;border-radius:1rem;padding:1.5rem;box-shadow:0 24px 70px rgba(15,23,42,.25);">
+          <div style="font-size:1.1rem;font-weight:700;color:#0f172a;margin-bottom:.25rem;">Demo sign in</div>
+          <div id="demo-password-label" style="font-size:.82rem;color:#64748b;margin-bottom:1rem;">Demo account</div>
+          <label style="display:block;font-size:.72rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.4rem;">Password</label>
+          <input id="demo-password-input" type="password" style="width:100%;padding:.7rem .85rem;border:1px solid #e2e8f0;border-radius:.6rem;font-size:.875rem;outline:none;background:#f8fafc;box-sizing:border-box;margin-bottom:.6rem;">
+          <div id="demo-password-error" style="display:none;color:#dc2626;font-size:.75rem;margin-bottom:.7rem;">Invalid password</div>
+          <div style="display:flex;gap:.6rem;">
+            <button onclick="closeDemoLogin()" style="flex:1;padding:.7rem;background:#fff;color:#64748b;border:1px solid #e2e8f0;border-radius:.6rem;font-size:.85rem;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;">Cancel</button>
+            <button onclick="confirmDemoLogin()" style="flex:1;padding:.7rem;background:#455c62;color:#fff;border:none;border-radius:.6rem;font-size:.85rem;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;">Sign In</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>

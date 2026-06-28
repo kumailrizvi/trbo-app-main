@@ -51,6 +51,7 @@ export default function LoginPage() {
   }
 
   return (
+    <>
     <div style={{minHeight:'100vh',background:'#f8fafc',display:'flex',alignItems:'center',justifyContent:'center',padding:32,fontFamily:"'DM Sans',sans-serif"}}>
       <div style={{width:'100%',maxWidth:440}}>
         <Link href="/" style={{display:'block',textAlign:'center',marginBottom:32,textDecoration:'none'}}>
@@ -95,16 +96,25 @@ export default function LoginPage() {
               <span style={{fontSize:12,color:'#455c62',fontWeight:500}}>Sign in →</span>
             </button>
           ))}
-          {selectedDemo && (
-            <form onSubmit={loginAsDemo} style={{marginTop:12,borderTop:'1px solid #f1f5f9',paddingTop:16}}>
-              <label style={{display:'block',fontSize:11,fontWeight:600,color:'#475569',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:6}}>Password</label>
-              <input type="password" value={demoPassword} onChange={e=>setDemoPassword(e.target.value)} required autoFocus
-                style={{width:'100%',padding:'10px 14px',border:'1px solid #e2e8f0',borderRadius:10,fontSize:14,outline:'none',background:'#f8fafc',color:'#0f172a',boxSizing:'border-box',marginBottom:10}}/>
-              <button type="submit" style={{width:'100%',padding:'10px',background:'#455c62',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>Sign In</button>
-            </form>
-          )}
         </div>
       </div>
     </div>
+
+      {selectedDemo && (
+        <div style={{position:'fixed',inset:0,background:'rgba(15,23,42,0.45)',display:'flex',alignItems:'center',justifyContent:'center',padding:24,zIndex:50}}>
+          <form onSubmit={loginAsDemo} style={{width:'100%',maxWidth:360,background:'white',border:'1px solid #e2e8f0',borderRadius:16,padding:24,boxShadow:'0 24px 70px rgba(15,23,42,0.25)'}}>
+            <div style={{fontSize:18,fontWeight:700,color:'#0f172a',marginBottom:4}}>Demo sign in</div>
+            <div style={{fontSize:13,color:'#64748b',marginBottom:18}}>{selectedDemo.name}</div>
+            <label style={{display:'block',fontSize:11,fontWeight:600,color:'#475569',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:6}}>Password</label>
+            <input type="password" value={demoPassword} onChange={e=>setDemoPassword(e.target.value)} required autoFocus
+              style={{width:'100%',padding:'10px 14px',border:'1px solid #e2e8f0',borderRadius:10,fontSize:14,outline:'none',background:'#f8fafc',color:'#0f172a',boxSizing:'border-box',marginBottom:12}}/>
+            <div style={{display:'flex',gap:10}}>
+              <button type="button" onClick={()=>setSelectedDemo(null)} style={{flex:1,padding:'10px',background:'white',color:'#64748b',border:'1px solid #e2e8f0',borderRadius:10,fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>Cancel</button>
+              <button type="submit" style={{flex:1,padding:'10px',background:'#455c62',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>Sign In</button>
+            </div>
+          </form>
+        </div>
+      )}
+    </>
   )
 }
