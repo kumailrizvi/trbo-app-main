@@ -1683,7 +1683,7 @@ td { padding: 0.85rem 1rem; font-size: 0.875rem; }
           <button onclick="showBorrowerWelcome()" style="padding:0.85rem 1.5rem;background:none;border:1px solid var(--border);border-radius:0.5rem;color:var(--text-dim);font-size:0.9rem;cursor:pointer;display:flex;align-items:center;gap:0.4rem;white-space:nowrap;">
             ← Back
           </button>
-          <button class="btn-large" onclick="showBorrowerUpload()" style="flex:1;border-radius:0.5rem;background:var(--gold);color:var(--dark);">
+          <button class="btn-large" onclick="continueBorrowerToUpload()" style="flex:1;border-radius:0.5rem;background:var(--gold);color:var(--dark);">
             Continue →
           </button>
         </div>
@@ -1778,9 +1778,10 @@ td { padding: 0.85rem 1rem; font-size: 0.875rem; }
             <div id="extracted-content" style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;"></div>
           </div>
 
+          <div class="error-msg" id="b-upload-error" style="display:none;margin-top:1rem;"></div>
           <div style="display:flex;gap:1rem;margin-top:1.5rem;">
             <button type="button" onclick="showBorrowerForm()" style="padding:.7rem 1.5rem;background:#f3f3f5;border:1px solid rgba(0,0,0,0.08);border-radius:.5rem;color:#475569;font-size:.875rem;cursor:pointer;font-family:Inter,sans-serif;">&#8592; Back</button>
-            <button onclick="runBorrowerCheck()" style="flex:1;background:#455c62;color:#fff;border:none;border-radius:.5rem;padding:.75rem;font-size:.875rem;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;">Generate My Financial Passport &#8594;</button>
+            <button onclick="submitBorrowerPassport()" style="flex:1;background:#455c62;color:#fff;border:none;border-radius:.5rem;padding:.75rem;font-size:.875rem;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;">Generate My Financial Passport &#8594;</button>
           </div>
         </div>
 
@@ -2467,6 +2468,85 @@ function showBorrowerForm() {
     const el = document.getElementById(id); if(el) el.style.display='none';
   });
   document.getElementById('b-form').style.display='block';
+}
+
+
+function setBorrowerError(id, message) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = message || '';
+  el.style.display = message ? 'block' : 'none';
+}
+function markBorrowerField(id, hasError) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.style.borderColor = hasError ? '#dc2626' : '';
+  el.style.background = hasError ? '#fff7f7' : '';
+}
+function validateBorrowerInfo() {
+  const required = [
+    ['b-fullname', 'Enter your full name.'],
+    ['b-email', 'Enter a valid email address.'],
+    ['b-passport', 'Enter your passport or ID number.'],
+    ['b-origin', 'Select your country of origin.'],
+    ['b-dest', 'Select your destination country.']
+  ];
+  for (const [id] of required) markBorrowerField(id, false);
+  const missing = required.find(([id]) => !(document.getElementById(id) || {value:''}).value.trim());
+  if (missing) {
+    markBorrowerField(missing[0], true);
+    setBorrowerError('b-error', missing[1]);
+    document.getElementById(missing[0])?.focus();
+    return false;
+  }
+  const email = (document.getElementById('b-email') || {value:''}).value.trim();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+    markBorrowerField('b-email', true);
+    setBorrowerError('b-error', 'Enter a valid email address.');
+    document.getElementById('b-email')?.focus();
+    return false;
+  }
+  setBorrowerError('b-error', '');
+  return true;
+}
+function continueBorrowerToUpload() {
+  if (!validateBorrowerInfo()) return;
+  showBorrowerUpload();
+}
+function hasBorrowerFile(id) {
+  const input = document.getElementById(id);
+  return !!(input && input.files && input.files.length > 0);
+}
+function validateBorrowerUploads() {
+  const missing = [];
+  if (!hasBorrowerFile('file-bank') && !parsedDocData.bank) missing.push('bank statement');
+  if (!hasBorrowerFile('file-passport') && !parsedDocData.passport) missing.push('passport / ID');
+  if (missing.length) {
+    setBorrowerError('b-upload-error', 'Upload your required ' + missing.join(' and ') + ' before generating your passport.');
+    return false;
+  }
+  setBorrowerError('b-upload-error', '');
+  return true;
+}
+function submitBorrowerPassport() {
+  if (!validateBorrowerUploads()) return;
+  runBorrowerCheck();
+}
+function cacheBorrowerDecision(id, status) {
+  const decisions = JSON.parse(localStorage.getItem('trbo_borrower_decisions') || '[]');
+  decisions.unshift({ id: id || 'current_profile', status, at: new Date().toISOString(), actor: 'demo_underwriter' });
+  localStorage.setItem('trbo_borrower_decisions', JSON.stringify(decisions.slice(0,100)));
+  const local = getLocalBorrowers().map(b => (id && b.id === id) ? Object.assign({}, b, { status }) : b);
+  if (local.length) localStorage.setItem('trbo_borrower_profiles', JSON.stringify(local));
+}
+async function makeBorrowerDecision(status, id) {
+  if (id) return updateBorrowerStatus(id, status);
+  cacheBorrowerDecision(null, status);
+  const label = status === 'approved' ? 'Approved' : status === 'declined' ? 'Rejected' : 'Sent to review';
+  showToast('✓ Decision saved: ' + label);
+  renderDashboard();
+  renderBorrowers();
+  if (typeof renderWorkQueues === 'function') renderWorkQueues();
 }
 
 function buildLocalBorrowerScore(data) {
@@ -3527,8 +3607,16 @@ async function handleDocUpload(input, docType) {
     const txt = JSON.stringify(parsed);
     parsedDocData[docType] = parsed;
 
-    if (statusEl) statusEl.style.display = 'none';
-    if (doneEl) { doneEl.style.display = 'block'; doneEl.textContent = '\u2713 ' + file.name + ' parsed'; }
+    if (parsed && parsed.parsed === false) {
+      if (statusEl) {
+        statusEl.style.display = 'block';
+        statusEl.innerHTML = '<div style="font-size:.78rem;color:#a16207;background:#fef9c3;border:1px solid #fde68a;border-radius:.45rem;padding:.55rem .7rem;">⚠ Upload received, but automatic extraction needs review. You can continue or upload a clearer file.</div>';
+      }
+      if (doneEl) { doneEl.style.display = 'block'; doneEl.style.color = '#a16207'; doneEl.textContent = '⚠ ' + file.name + ' needs review'; }
+    } else {
+      if (statusEl) statusEl.style.display = 'none';
+      if (doneEl) { doneEl.style.display = 'block'; doneEl.style.color = '#059669'; doneEl.textContent = '\u2713 ' + file.name + ' parsed'; }
+    }
     if (progEl) progEl.classList.add('done');
 
     // Auto-fill hidden form fields
@@ -5418,15 +5506,15 @@ async function saveBorrowerToDB(scoreResult, formData) {
       <div style="background:#ffffff;border:1px solid rgba(0,0,0,0.08);border-radius:0.75rem;padding:1.25rem;">
         <div style="font-size:0.95rem;font-weight:600;color:var(--text);margin-bottom:1rem;">Decision Recommendation</div>
         <div style="display:flex;flex-direction:column;gap:0.6rem;">
-          <button onclick="this.style.opacity='0.7'" style="width:100%;padding:0.9rem;background:var(--green);border:none;border-radius:0.5rem;color:white;font-size:0.9rem;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;display:flex;align-items:center;justify-content:center;gap:0.5rem;">
+          <button onclick="makeBorrowerDecision('approved')" style="width:100%;padding:0.9rem;background:var(--green);border:none;border-radius:0.5rem;color:white;font-size:0.9rem;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;display:flex;align-items:center;justify-content:center;gap:0.5rem;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
             Approve
           </button>
-          <button style="width:100%;padding:0.9rem;background:rgba(224,154,42,0.12);border:1px solid rgba(224,154,42,0.3);border-radius:0.5rem;color:var(--amber-600);font-size:0.9rem;font-weight:500;cursor:pointer;font-family:Inter,sans-serif;display:flex;align-items:center;justify-content:center;gap:0.5rem;">
+          <button onclick="makeBorrowerDecision('Under Review')" style="width:100%;padding:0.9rem;background:rgba(224,154,42,0.12);border:1px solid rgba(224,154,42,0.3);border-radius:0.5rem;color:var(--amber-600);font-size:0.9rem;font-weight:500;cursor:pointer;font-family:Inter,sans-serif;display:flex;align-items:center;justify-content:center;gap:0.5rem;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             Send to Review
           </button>
-          <button style="width:100%;padding:0.9rem;background:rgba(224,82,82,0.1);border:1px solid rgba(224,82,82,0.2);border-radius:0.5rem;color:var(--red);font-size:0.9rem;font-weight:500;cursor:pointer;font-family:Inter,sans-serif;display:flex;align-items:center;justify-content:center;gap:0.5rem;">
+          <button onclick="makeBorrowerDecision('declined')" style="width:100%;padding:0.9rem;background:rgba(224,82,82,0.1);border:1px solid rgba(224,82,82,0.2);border-radius:0.5rem;color:var(--red);font-size:0.9rem;font-weight:500;cursor:pointer;font-family:Inter,sans-serif;display:flex;align-items:center;justify-content:center;gap:0.5rem;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
             Reject
           </button>
@@ -6245,13 +6333,24 @@ async function viewBorrower(id) {
 
 // ── 4. updateBorrowerStatus
 async function updateBorrowerStatus(id, status) {
-  if (!_sb) return;
-  const { error } = await _sb.from('borrowers').update({ status }).eq('id', id);
+  const _sbNow = (typeof _sb !== 'undefined') ? _sb : null;
+  if (!_sbNow) {
+    cacheBorrowerDecision(id, status);
+    showToast('Status saved locally: ' + status);
+    renderBorrowers();
+    renderDashboard();
+    if (typeof renderWorkQueues === 'function') renderWorkQueues();
+    return;
+  }
+  const { error } = await _sbNow.from('borrowers').update({ status }).eq('id', id);
   if (!error) {
+    cacheBorrowerDecision(id, status);
     showToast('Status updated to: ' + status);
     renderBorrowers();
     renderDashboard();
     viewBorrower(id);
+  } else {
+    showToast('Decision failed: ' + error.message);
   }
 }
 
@@ -6588,17 +6687,17 @@ function filterWQBorrowers(val) {
 
 async function wqDecide(borrowerId, status) {
   const _sbNow = (typeof _sb !== 'undefined') ? _sb : null;
-  if (!_sbNow) return;
-  const { error } = await _sbNow.from('borrowers').update({ status }).eq('id', borrowerId);
-  if (!error) {
-    showToast(status === 'approved' ? '✓ Approved' : status === 'declined' ? '✗ Declined' : '⟳ Sent to Review');
-    // Update local data
-    const b = wqAllBorrowers.find(b => b.id === borrowerId);
-    if (b) b.status = status;
-    loadWQBorrowers(document.getElementById('wq-search')?.value || '');
-    renderWorkQueues();
-    renderDashboard();
+  if (_sbNow) {
+    const { error } = await _sbNow.from('borrowers').update({ status }).eq('id', borrowerId);
+    if (error) { showToast('Decision failed: ' + error.message); return; }
   }
+  cacheBorrowerDecision(borrowerId, status);
+  showToast(status === 'approved' ? '✓ Approved' : status === 'declined' ? '✗ Declined' : '⟳ Sent to Review');
+  const b = wqAllBorrowers.find(b => b.id === borrowerId);
+  if (b) b.status = status;
+  loadWQBorrowers(document.getElementById('wq-search')?.value || '');
+  renderWorkQueues();
+  renderDashboard();
 }
 
 // Override showLenderPage to load work queues when navigated to
