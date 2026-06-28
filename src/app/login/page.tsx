@@ -17,6 +17,7 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [selectedDemo, setSelectedDemo] = useState<typeof DEMOS[number] | null>(null)
   const [demoPassword, setDemoPassword] = useState('')
+  const [demoError, setDemoError] = useState('')
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
@@ -37,13 +38,14 @@ export default function LoginPage() {
     setSelectedDemo(demo)
     setDemoPassword('')
     setError('')
+    setDemoError('')
   }
 
   function loginAsDemo(e: React.FormEvent) {
     e.preventDefault()
     if (!selectedDemo) return
     if (demoPassword !== 'trbo3095') {
-      setError('Invalid password')
+      setDemoError('Invalid password')
       return
     }
     localStorage.setItem('trbo_demo_lender', selectedDemo.id)
@@ -106,10 +108,11 @@ export default function LoginPage() {
             <div style={{fontSize:18,fontWeight:700,color:'#0f172a',marginBottom:4}}>Demo sign in</div>
             <div style={{fontSize:13,color:'#64748b',marginBottom:18}}>{selectedDemo.name}</div>
             <label style={{display:'block',fontSize:11,fontWeight:600,color:'#475569',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:6}}>Password</label>
-            <input type="password" value={demoPassword} onChange={e=>setDemoPassword(e.target.value)} required autoFocus
-              style={{width:'100%',padding:'10px 14px',border:'1px solid #e2e8f0',borderRadius:10,fontSize:14,outline:'none',background:'#f8fafc',color:'#0f172a',boxSizing:'border-box',marginBottom:12}}/>
+            <input type="password" value={demoPassword} onChange={e=>{setDemoPassword(e.target.value); setDemoError('')}} required autoFocus
+              style={{width:'100%',padding:'10px 14px',border:demoError?'1px solid #dc2626':'1px solid #e2e8f0',borderRadius:10,fontSize:14,outline:'none',background:'#f8fafc',color:'#0f172a',boxSizing:'border-box',marginBottom:demoError?6:12}}/>
+            {demoError && <div style={{fontSize:12,color:'#dc2626',marginBottom:12}}>{demoError}</div>}
             <div style={{display:'flex',gap:10}}>
-              <button type="button" onClick={()=>setSelectedDemo(null)} style={{flex:1,padding:'10px',background:'white',color:'#64748b',border:'1px solid #e2e8f0',borderRadius:10,fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>Cancel</button>
+              <button type="button" onClick={()=>{setSelectedDemo(null); setDemoError('')}} style={{flex:1,padding:'10px',background:'white',color:'#64748b',border:'1px solid #e2e8f0',borderRadius:10,fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>Cancel</button>
               <button type="submit" style={{flex:1,padding:'10px',background:'#455c62',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>Sign In</button>
             </div>
           </form>
