@@ -4828,6 +4828,31 @@ async function handleLogin() {
   }
 }
 
+let pendingDemoLenderId = null;
+
+function promptDemoLogin(lenderId, label) {
+  pendingDemoLenderId = lenderId;
+  const panel = document.getElementById('demo-password-panel');
+  const input = document.getElementById('demo-password-input');
+  const error = document.getElementById('demo-password-error');
+  const labelEl = document.getElementById('demo-password-label');
+  if(labelEl) labelEl.textContent = label;
+  if(error) error.style.display = 'none';
+  if(panel) panel.style.display = 'block';
+  if(input) { input.value = ''; input.focus(); }
+}
+
+function confirmDemoLogin() {
+  const input = document.getElementById('demo-password-input');
+  const error = document.getElementById('demo-password-error');
+  if(!pendingDemoLenderId || !input) return;
+  if(input.value !== 'trbo3095') {
+    if(error) error.style.display = 'block';
+    return;
+  }
+  loginAs(pendingDemoLenderId);
+}
+
 function loginAs(lenderId) {
   document.getElementById('auth-screen').style.display = 'none';
   if(lenderId === 'trbo_admin') {
@@ -5475,26 +5500,32 @@ async function saveBorrowerToDB(scoreResult, formData) {
     <div style="background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:.75rem;padding:1rem;margin-top:1rem;">
       <div style="font-size:.72rem;font-weight:600;color:#64748b;margin-bottom:.6rem;text-transform:uppercase;letter-spacing:.04em;">Demo Accounts</div>
       <div style="display:flex;flex-direction:column;gap:.4rem;">
-        <button onclick="loginAs('lender_koho')" style="display:flex;align-items:center;gap:.6rem;padding:.55rem .75rem;border:1px solid #e2e8f0;border-radius:.4rem;cursor:pointer;background:#f8fafc;font-family:Inter,sans-serif;text-align:left;">
+        <button onclick="promptDemoLogin('lender_koho','XYZ Financial')" style="display:flex;align-items:center;gap:.6rem;padding:.55rem .75rem;border:1px solid #e2e8f0;border-radius:.4rem;cursor:pointer;background:#f8fafc;font-family:Inter,sans-serif;text-align:left;">
           <div style="width:22px;height:22px;border-radius:5px;background:#2563eb;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.65rem;flex-shrink:0;">K</div>
           <div style="flex:1;"><span style="font-size:.78rem;font-weight:500;color:#0f172a;">XYZ Financial</span> <span style="font-size:.68rem;color:#94a3b8;">· Growth Plan</span></div>
           <span style="font-size:.68rem;color:#455c62;font-weight:500;">Sign in →</span>
         </button>
-        <button onclick="loginAs('lender_borrowell')" style="display:flex;align-items:center;gap:.6rem;padding:.55rem .75rem;border:1px solid #e2e8f0;border-radius:.4rem;cursor:pointer;background:#f8fafc;font-family:Inter,sans-serif;text-align:left;">
+        <button onclick="promptDemoLogin('lender_borrowell','Acme Lending')" style="display:flex;align-items:center;gap:.6rem;padding:.55rem .75rem;border:1px solid #e2e8f0;border-radius:.4rem;cursor:pointer;background:#f8fafc;font-family:Inter,sans-serif;text-align:left;">
           <div style="width:22px;height:22px;border-radius:5px;background:#059669;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.65rem;flex-shrink:0;">B</div>
           <div style="flex:1;"><span style="font-size:.78rem;font-weight:500;color:#0f172a;">Acme Lending</span> <span style="font-size:.68rem;color:#94a3b8;">· Starter Plan</span></div>
           <span style="font-size:.68rem;color:#455c62;font-weight:500;">Sign in →</span>
         </button>
-        <button onclick="loginAs('lender_rbc')" style="display:flex;align-items:center;gap:.6rem;padding:.55rem .75rem;border:1px solid #e2e8f0;border-radius:.4rem;cursor:pointer;background:#f8fafc;font-family:Inter,sans-serif;text-align:left;">
+        <button onclick="promptDemoLogin('lender_rbc','Example Bank Newcomer')" style="display:flex;align-items:center;gap:.6rem;padding:.55rem .75rem;border:1px solid #e2e8f0;border-radius:.4rem;cursor:pointer;background:#f8fafc;font-family:Inter,sans-serif;text-align:left;">
           <div style="width:22px;height:22px;border-radius:5px;background:#dc2626;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.65rem;flex-shrink:0;">R</div>
           <div style="flex:1;"><span style="font-size:.78rem;font-weight:500;color:#0f172a;">Example Bank Newcomer</span> <span style="font-size:.68rem;color:#94a3b8;">· Enterprise Plan</span></div>
           <span style="font-size:.68rem;color:#455c62;font-weight:500;">Sign in →</span>
         </button>
-        <button onclick="loginAs('trbo_admin')" style="display:flex;align-items:center;gap:.6rem;padding:.55rem .75rem;border:1px solid rgba(69,92,98,0.3);border-radius:.4rem;cursor:pointer;background:#f0f4f5;font-family:Inter,sans-serif;text-align:left;">
+        <button onclick="promptDemoLogin('trbo_admin','trbo Admin')" style="display:flex;align-items:center;gap:.6rem;padding:.55rem .75rem;border:1px solid rgba(69,92,98,0.3);border-radius:.4rem;cursor:pointer;background:#f0f4f5;font-family:Inter,sans-serif;text-align:left;">
           <div style="width:22px;height:22px;border-radius:5px;background:#455c62;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.65rem;flex-shrink:0;">T</div>
           <div style="flex:1;"><span style="font-size:.78rem;font-weight:500;color:#0f172a;">trbo Admin</span> <span style="font-size:.68rem;color:#94a3b8;">· Super Admin</span></div>
           <span style="font-size:.68rem;color:#455c62;font-weight:500;">Sign in →</span>
         </button>
+      </div>
+      <div id="demo-password-panel" style="display:none;border-top:1px solid #f1f5f9;margin-top:.75rem;padding-top:.85rem;">
+        <div id="demo-password-label" style="font-size:.78rem;font-weight:600;color:#0f172a;margin-bottom:.5rem;">Demo sign in</div>
+        <input id="demo-password-input" type="password" style="width:100%;padding:.65rem .75rem;border:1px solid #e2e8f0;border-radius:.45rem;font-size:.82rem;outline:none;background:#f8fafc;box-sizing:border-box;margin-bottom:.5rem;">
+        <div id="demo-password-error" style="display:none;color:#dc2626;font-size:.72rem;margin-bottom:.5rem;">Invalid password</div>
+        <button onclick="confirmDemoLogin()" style="width:100%;padding:.65rem;background:#455c62;color:#fff;border:none;border-radius:.45rem;font-size:.82rem;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;">Sign In</button>
       </div>
     </div>
   </div>

@@ -1,6 +1,5 @@
 'use client'
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 
@@ -12,11 +11,12 @@ const DEMOS = [
 ]
 
 export default function LoginPage() {
-  const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [selectedDemo, setSelectedDemo] = useState<typeof DEMOS[number] | null>(null)
+  const [demoPassword, setDemoPassword] = useState('')
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
@@ -33,8 +33,20 @@ export default function LoginPage() {
     }
   }
 
-  function loginAsDemo(id: string) {
-    localStorage.setItem('trbo_demo_lender', id)
+  function selectDemo(demo: typeof DEMOS[number]) {
+    setSelectedDemo(demo)
+    setDemoPassword('')
+    setError('')
+  }
+
+  function loginAsDemo(e: React.FormEvent) {
+    e.preventDefault()
+    if (!selectedDemo) return
+    if (demoPassword !== 'trbo3095') {
+      setError('Invalid password')
+      return
+    }
+    localStorage.setItem('trbo_demo_lender', selectedDemo.id)
     window.location.href = '/portal.html'
   }
 
@@ -73,7 +85,7 @@ export default function LoginPage() {
         <div style={{background:'white',border:'1px solid #e2e8f0',borderRadius:16,padding:20,boxShadow:'0 4px 20px rgba(0,0,0,0.06)'}}>
           <div style={{fontSize:11,fontWeight:600,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:12}}>Demo Accounts</div>
           {DEMOS.map(d => (
-            <button key={d.id} onClick={()=>loginAsDemo(d.id)}
+            <button key={d.id} onClick={()=>selectDemo(d)}
               style={{width:'100%',display:'flex',alignItems:'center',gap:12,padding:'10px 12px',border:'1px solid #f1f5f9',borderRadius:10,background:'#f8fafc',cursor:'pointer',fontFamily:'inherit',marginBottom:8,textAlign:'left'}}>
               <div style={{width:32,height:32,borderRadius:8,background:d.color,color:'white',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,fontSize:12,flexShrink:0}}>{d.logo}</div>
               <div style={{flex:1}}>
@@ -83,6 +95,14 @@ export default function LoginPage() {
               <span style={{fontSize:12,color:'#455c62',fontWeight:500}}>Sign in →</span>
             </button>
           ))}
+          {selectedDemo && (
+            <form onSubmit={loginAsDemo} style={{marginTop:12,borderTop:'1px solid #f1f5f9',paddingTop:16}}>
+              <label style={{display:'block',fontSize:11,fontWeight:600,color:'#475569',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:6}}>Password</label>
+              <input type="password" value={demoPassword} onChange={e=>setDemoPassword(e.target.value)} required autoFocus
+                style={{width:'100%',padding:'10px 14px',border:'1px solid #e2e8f0',borderRadius:10,fontSize:14,outline:'none',background:'#f8fafc',color:'#0f172a',boxSizing:'border-box',marginBottom:10}}/>
+              <button type="submit" style={{width:'100%',padding:'10px',background:'#455c62',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>Sign In</button>
+            </form>
+          )}
         </div>
       </div>
     </div>
