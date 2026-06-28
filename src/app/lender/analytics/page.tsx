@@ -32,9 +32,8 @@ export default function AnalyticsPage() {
             {months.map((m,i) => (
               <div key={m} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:8}}>
                 <div style={{fontSize:11,fontWeight:600,color:'#455c62'}}>{scores[i]}</div>
-                <div style={{width:'100%',background:'#455c62',borderRadius:6,opacity:0.8+i*0.04}} title={`${m}: ${scores[i]}`}
-                  style2={{height: `${(scores[i]/maxScore)*140}px`,width:'100%',background:'#455c62',borderRadius:6}}
-                  style={{height:`${(scores[i]/maxScore)*140}px`,width:'100%',background:'#455c62',borderRadius:'6px 6px 0 0'}} />
+                <div title={`${m}: ${scores[i]}`}
+                  style={{height:`${(scores[i]/maxScore)*140}px`,width:'100%',background:'#455c62',borderRadius:'6px 6px 0 0',opacity:0.8+i*0.04}} />
                 <div style={{fontSize:11,color:'#94a3b8'}}>{m}</div>
               </div>
             ))}

@@ -3500,7 +3500,7 @@ async function handleDocUpload(input, docType) {
 
   if (statusEl) {
     statusEl.style.display = 'block';
-    statusEl.innerHTML = '<div style="display:flex;align-items:center;gap:.5rem;font-size:.78rem;color:#2563eb;"><div style="width:14px;height:14px;border:2px solid #dbeafe;border-top-color:#2563eb;border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0;"></div>Claude is reading ' + file.name + '...</div>';
+    statusEl.innerHTML = '<div style="display:flex;align-items:center;gap:.5rem;font-size:.78rem;color:#2563eb;"><div style="width:14px;height:14px;border:2px solid #dbeafe;border-top-color:#2563eb;border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0;"></div>trbo AI is reading ' + file.name + '...</div>';
   }
 
   try {
@@ -4736,7 +4736,7 @@ async function wlHandleUpload(input, docType) {
   const statusEl = document.getElementById('wl-status-' + docType);
   const uploadEl = document.getElementById('wl-upload-' + docType);
 
-  if(statusEl) statusEl.innerHTML = '<span style="color:var(--wl-primary,#2563eb);">⏳ Claude is reading ' + file.name + '...</span>';
+  if(statusEl) statusEl.innerHTML = '<span style="color:var(--wl-primary,#2563eb);">⏳ trbo AI is reading ' + file.name + '...</span>';
 
   try {
     const base64 = await fileToBase64(file);
@@ -6278,7 +6278,7 @@ if (_origRunCheck) {
       };
       // Get score from rendered results
       const scoreEl = document.querySelector('.score-num');
-      if (scoreEl && supabase) {
+      if (scoreEl && (typeof _sb !== 'undefined' ? _sb : null)) {
         const score = parseInt(scoreEl.textContent) || 0;
         const riskEl = document.querySelector('.score-label');
         await saveBorrowerToDB(

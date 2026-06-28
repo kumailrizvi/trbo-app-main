@@ -26,7 +26,7 @@ export default function Dashboard() {
 
   const total = borrowers.length
   const approved = borrowers.filter(b => b.status === 'Ready' || b.status === 'approved').length
-  const review = borrowers.filter(b => b.status === 'Under Review' || b.status === 'review').length
+  const review = borrowers.filter(b => b.status === 'Under Review' || b.status === 'Processing' || b.status === 'pending').length
   const declined = borrowers.filter(b => b.status === 'declined').length
 
   const statCards = [
@@ -52,7 +52,7 @@ export default function Dashboard() {
     const map: Record<string,{bg:string,color:string}> = {
       Ready:{bg:'#dcfce7',color:'#15803d'}, approved:{bg:'#dcfce7',color:'#15803d'},
       Processing:{bg:'#dbeafe',color:'#1d4ed8'}, pending:{bg:'#dbeafe',color:'#1d4ed8'},
-      'Under Review':{bg:'#fef9c3',color:'#a16207'}, review:{bg:'#fef9c3',color:'#a16207'},
+      'Under Review':{bg:'#fef9c3',color:'#a16207'},
       declined:{bg:'#fee2e2',color:'#b91c1c'},
     }
     const s = map[status] || {bg:'#f1f5f9',color:'#64748b'}

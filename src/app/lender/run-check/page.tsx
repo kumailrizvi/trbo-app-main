@@ -104,7 +104,7 @@ export default function RunCheck() {
                 {(result.key_risks as string[]).map(r => <div key={r} style={{display:'flex',alignItems:'center',gap:8,fontSize:13,color:'#0f172a',marginBottom:6}}><AlertTriangle size={14} color="#d97706" />{r}</div>)}
               </div>
             )}
-            {result.analyst_narrative && <p style={{fontSize:13,color:'#64748b',fontStyle:'italic',lineHeight:1.6}}>"{result.analyst_narrative as string}"</p>}
+            {typeof result.analyst_narrative === 'string' && <p style={{fontSize:13,color:'#64748b',fontStyle:'italic',lineHeight:1.6}}>&ldquo;{String(result.analyst_narrative)}&rdquo;</p>}
           </div>
         )}
       </div>

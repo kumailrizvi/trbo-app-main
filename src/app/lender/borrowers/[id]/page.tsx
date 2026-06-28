@@ -1,13 +1,12 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase, type Borrower } from '@/lib/supabase'
 import { ArrowLeft, CheckCircle, AlertTriangle } from 'lucide-react'
 
 export default function BorrowerProfile() {
   const { id } = useParams()
-  const router = useRouter()
   const [borrower, setBorrower] = useState<Borrower | null>(null)
   const [loading, setLoading] = useState(true)
 

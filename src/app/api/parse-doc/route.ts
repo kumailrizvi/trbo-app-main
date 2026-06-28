@@ -1,5 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+function fallbackParse(messages: Array<{type?: string, text?: string}>) {
+  const text = messages.map(m => m.text || '').join(' ').toLowerCase()
+  if (text.includes('classify')) return { type: text.includes('payslip') ? 'payslip' : text.includes('remittance') ? 'remittance' : text.includes('passport') || text.includes('id') ? 'id_passport' : 'bank_statement', confidence: 'medium', source: 'local-document-parser' }
+  if (text.includes('remittance') || text.includes('transfer')) return { average_monthly_remittance: null, currency: 'USD', consistency: 'requires_review', parsed: false, source: 'local-document-parser', note: 'OpenAI key not configured; upload was received but values require AI extraction or manual entry.' }
+  if (text.includes('passport') || text.includes('id document')) return { full_name: null, document_type: null, nationality: null, issuing_country: null, parsed: false, source: 'local-document-parser', note: 'OpenAI key not configured; identity values require AI extraction or manual entry.' }
+  if (text.includes('payslip')) return { monthly_income: null, employer: null, job_title: null, parsed: false, source: 'local-document-parser', note: 'OpenAI key not configured; payslip values require AI extraction or manual entry.' }
+  return { average_monthly_income: null, average_monthly_savings: null, currency: 'USD', income_consistency: 'requires_review', parsed: false, source: 'local-document-parser', note: 'OpenAI key not configured; bank values require AI extraction or manual entry.' }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
@@ -38,6 +47,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ parsed: false, note: 'No valid content to parse' })
     }
 
+    if (!process.env.OPENAI_API_KEY) {
+      return NextResponse.json(fallbackParse(messages))
+    }
+
     for (let attempt = 0; attempt < 5; attempt++) {
       if (attempt > 0) await new Promise(r => setTimeout(r, attempt * 6000))
 
@@ -71,7 +84,7 @@ export async function POST(req: NextRequest) {
       catch { return NextResponse.json({ raw: text }) }
     }
 
-    return NextResponse.json({ parsed: false, note: 'Rate limited - manual entry required' })
+    return NextResponse.json({ ...fallbackParse(messages), warning: 'OpenAI rate limited' })
   } catch (err) {
     console.error('parse-doc error:', err)
     return NextResponse.json({ error: String(err) }, { status: 500 })
