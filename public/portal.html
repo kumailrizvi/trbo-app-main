@@ -2087,6 +2087,7 @@ function localBorrowerFromProfile(profile) {
     created_at: profile.created_at || new Date().toISOString(),
     parsed_docs: profile.parsed_docs || null,
     analyst_narrative: profile.analyst_narrative || profile.narrative || '',
+    is_demo: !!profile.is_demo,
   };
 }
 function getLocalBorrowers() {
@@ -2099,7 +2100,29 @@ function cacheBorrowerProfile(profile) {
   localStorage.setItem('trbo_borrower_profiles', JSON.stringify([borrower].concat(existing).slice(0,100)));
   return borrower;
 }
-function getRuntimeBorrowers() { return getLocalBorrowers(); }
+function getDemoBorrowersForCurrentLender(limit) {
+  const demoSource = (typeof LENDER_BORROWERS !== 'undefined' && typeof currentLender !== 'undefined')
+    ? (LENDER_BORROWERS[currentLender.id] || BORROWERS)
+    : BORROWERS;
+  return (demoSource || []).slice(0, limit || 4).map((b, idx) => localBorrowerFromProfile({
+    id: 'demo_' + (typeof currentLender !== 'undefined' ? currentLender.id : 'global') + '_' + (b.id || idx),
+    name: b.name,
+    origin: b.from,
+    destination: b.to,
+    score: b.score,
+    global_score: b.score,
+    risk: b.risk,
+    status: b.status,
+    date: b.date,
+    is_demo: true,
+  }));
+}
+function getRuntimeBorrowers() {
+  const local = getLocalBorrowers();
+  const demo = getDemoBorrowersForCurrentLender(4);
+  const seen = new Set(local.map(b => b.id));
+  return local.concat(demo.filter(b => !seen.has(b.id)));
+}
 
 function renderDashboard() {
   const ldata = getRuntimeBorrowers();
